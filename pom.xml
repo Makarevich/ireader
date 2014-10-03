@@ -31,6 +31,12 @@
       <version>v2-rev145-1.19.0</version>
     </dependency>
     <dependency>
+	  <groupId>com.google.http-client</groupId>
+	  <artifactId>google-http-client-jackson</artifactId>
+	  <version>1.19.0</version>
+    </dependency>
+
+    <dependency>
       <groupId>net.liftweb</groupId>
       <artifactId>lift-json_${scala.version}</artifactId>
       <version>2.6-M3</version>

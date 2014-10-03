@@ -9,45 +9,21 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
     <servlet>
-        <servlet-name>HelloForm</servlet-name>
-        <servlet-class>testgrp.Test</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>Tree</servlet-name>
-        <servlet-class>ireader.server.TreeSvlt</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>History</servlet-name>
-        <servlet-class>ireader.server.HistorySvlt</servlet-class>
-    </servlet>
-    <servlet>
         <servlet-name>StartTime</servlet-name>
         <servlet-class>ireader.server.StartTimeSvlt</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>Job</servlet-name>
-        <servlet-class>ireader.server.JobSvlt</servlet-class>
+        <servlet-name>Auth</servlet-name>
+        <servlet-class>ireader.server.AuthSvlt</servlet-class>
     </servlet>
 
-    <servlet-mapping>
-        <servlet-name>HelloForm</servlet-name>
-        <url-pattern>/a/*</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>Tree</servlet-name>
-        <url-pattern>/tree/*</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>History</servlet-name>
-        <url-pattern>/history/*</url-pattern>
-    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>StartTime</servlet-name>
         <url-pattern>/start-time/*</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>Job</servlet-name>
-        <url-pattern>/job-task/*</url-pattern>
+        <servlet-name>Auth</servlet-name>
+        <url-pattern>/auth/*</url-pattern>
     </servlet-mapping>
 
 

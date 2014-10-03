@@ -5,21 +5,23 @@ html(lang="en")
     script(type='text/javascript' src='webjars/jquery/2.1.1/jquery.min.js')
     /script(type='text/javascript' src='webjars/bootstrap/3.2.0/js/bootstrap.min.js')
     script(type='text/javascript' src='start-time.js')
+    script(type='text/javascript' src='auth.js')
     :javascript
       function init_all() {
           setup_page_reloader()
+          setup_auth($('#auth'))
 
           //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
           //    var msg = "Ajax error: " + settings.url
           //    console.log(msg, jqxhr, settings, exception)
           //    alert(msg)
           //});
-
-          //$('#reload').click(reload_tree)
       }
       $(init_all)
   body
     .container
+      .row
+        #auth
       .row
         .col-md-8
           | Left column

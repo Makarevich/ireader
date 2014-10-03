@@ -6,6 +6,7 @@ import net.liftweb.json._
 abstract class JsonServlet extends HttpServlet {
     protected var req: HttpServletRequest = null;
     protected var resp: HttpServletResponse = null;
+    protected def session = this.req.getSession
 
     protected def getReqParam(name: String): Option[String] = {
         val v = this.req.getParameter(name)
