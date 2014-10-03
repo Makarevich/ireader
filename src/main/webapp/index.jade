@@ -6,24 +6,26 @@ html(lang="en")
     /script(type='text/javascript' src='webjars/bootstrap/3.2.0/js/bootstrap.min.js')
     script(type='text/javascript' src='start-time.js')
     script(type='text/javascript' src='auth.js')
+    script(type='text/javascript' src='drive.js')
     :javascript
       function init_all() {
-          setup_page_reloader()
-          setup_auth($('#auth'))
+        setup_page_reloader()
+        setup_auth($('#auth')).done(function() {
+            list_children($('#drive'))
+        })
 
-          //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
-          //    var msg = "Ajax error: " + settings.url
-          //    console.log(msg, jqxhr, settings, exception)
-          //    alert(msg)
-          //});
+        //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
+        //    var msg = "Ajax error: " + settings.url
+        //    console.log(msg, jqxhr, settings, exception)
+        //    alert(msg)
+        //});
       }
       $(init_all)
   body
     .container
       .row
-        #auth
-      .row
         .col-md-8
           | Left column
+          #drive
         .col-md-4
           | Right column

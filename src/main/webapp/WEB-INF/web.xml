@@ -16,6 +16,10 @@
         <servlet-name>Auth</servlet-name>
         <servlet-class>ireader.server.AuthSvlt</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>Drive</servlet-name>
+        <servlet-class>ireader.server.DriveSvlt</servlet-class>
+    </servlet>
 
     <servlet-mapping>
         <servlet-name>StartTime</servlet-name>
@@ -24,6 +28,10 @@
     <servlet-mapping>
         <servlet-name>Auth</servlet-name>
         <url-pattern>/auth/*</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>Drive</servlet-name>
+        <url-pattern>/drive/*</url-pattern>
     </servlet-mapping>
 
 
