@@ -27,9 +27,8 @@ class DriveSvlt extends JsonServlet {
     override def doGet: JValue = {
         val children = drive.children.list("root").execute
 
-        val result = children.getItems.map { ch =>
-            drive.files.get(ch.getId).execute.getTitle
-        }
+        val result = children.getItems.map { ch => drive.files.get(ch.getId).execute }
+              .map{ f => ("title" -> f.getTitle) ~ ("link" -> f.getAlternateLink) }
 
         ( "children" -> result )
     }

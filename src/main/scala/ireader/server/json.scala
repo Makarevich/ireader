@@ -23,7 +23,8 @@ abstract class JsonServlet extends HttpServlet {
         val json = doGet
 
         resp.setContentType("application/json")
-        resp.getOutputStream.println(compact(render(json)))
+        resp.setCharacterEncoding("UTF-8")
+        resp.getWriter.print(compact(render(json)))
     }
 
     override def doPost(req: HttpServletRequest, resp: HttpServletResponse) {
