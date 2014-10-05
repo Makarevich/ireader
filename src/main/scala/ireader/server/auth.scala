@@ -8,6 +8,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson.JacksonFactory
 
+import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 
 
@@ -30,33 +31,41 @@ class AuthSvlt extends JsonServlet {
     private def augmentRediectTo(base_url: String): String = base_url + "auth"
 
     override def doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val auth_code = req.getParameter("code")
-        assert(auth_code != null)
+        initRequest(req, resp)
 
-        val redirect_to: String = req.getSession.getAttribute(
-            Session.SESSION_REDIRECT_TO).toString
+        val auth_code = getReqParam("code")
+        assert(!auth_code.isEmpty)
 
-        val token_response = auth_flow.newTokenRequest(auth_code)
+        val redirect_to: String = session.redirect_to.get
+
+        val token_response = auth_flow.newTokenRequest(auth_code.get)
                                       .setRedirectUri(augmentRediectTo(redirect_to))
                                       .execute
         val access_token: String = token_response.getAccessToken
         info(s"Access token: ${access_token}")
-        req.getSession.setAttribute(Session.SESSION_ACCESS_TOKEN, access_token)
+        session.access_token.set(access_token)
 
         val creds = auth_flow.createAndStoreCredential(token_response, null)
-        req.getSession.setAttribute(Session.SESSION_GOOGLE_CREDS, creds)
+        session.google_creds.set(creds)
+        session.drive.set(new Drive.Builder(
+                            new NetHttpTransport,
+                            new JacksonFactory,
+                            creds).build)
 
         resp.sendRedirect(resp.encodeRedirectURL(redirect_to))
     }
 
     override def doPost(data: JValue): JValue = {
-        val access_token = session.getAttribute(Session.SESSION_ACCESS_TOKEN)
-        if (access_token != null) {
-            return ("access_token" -> access_token.toString)
+        {
+            val is_force = getReqParam("force")
+            val access_token_opt = session.access_token.getOption
+            if (is_force != Some("true") && !access_token_opt.isEmpty) {
+                return ("access_token" -> access_token_opt.get)
+            }
         }
 
         val JString(redirect_to: String) = data \ "redirect_to"
-        session.setAttribute(Session.SESSION_REDIRECT_TO, redirect_to)
+        session.redirect_to.set(redirect_to)
         val auth_url = auth_flow.newAuthorizationUrl
                                 .setRedirectUri(augmentRediectTo(redirect_to))
                                 .build

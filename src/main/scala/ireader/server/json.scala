@@ -6,19 +6,22 @@ import net.liftweb.json._
 abstract class JsonServlet extends HttpServlet {
     protected var req: HttpServletRequest = null;
     protected var resp: HttpServletResponse = null;
-    protected def session = this.req.getSession
+    protected var session: Session = null
 
-    protected def getReqParam(name: String): Option[String] = {
-        val v = this.req.getParameter(name)
-        if(v == null) None else Some(v)
-    }
+    protected def getReqParam(name: String): Option[String] =
+        Option(this.req.getParameter(name))
 
     protected def doGet: JValue = ???
     protected def doPost(data: JValue): JValue = ???
 
-    override def doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+    protected def initRequest(req: HttpServletRequest, resp: HttpServletResponse) {
         this.req = req
         this.resp = resp
+        this.session = new Session(this.req.getSession)
+    }
+
+    override def doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+        initRequest(req, resp)
 
         val json = doGet
 
@@ -28,8 +31,7 @@ abstract class JsonServlet extends HttpServlet {
     }
 
     override def doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        this.req = req
-        this.resp = resp
+        initRequest(req, resp)
 
         val data: String = {
             val reader = req.getReader
