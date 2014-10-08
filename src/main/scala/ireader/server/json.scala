@@ -41,7 +41,8 @@ abstract class JsonServlet extends HttpServlet {
         val json = doPost(parse(data))
 
         resp.setContentType("application/json")
-        resp.getOutputStream.println(compact(render(json)))
+        resp.setCharacterEncoding("UTF-8")
+        resp.getWriter.print(compact(render(json)))
     }
 
 }

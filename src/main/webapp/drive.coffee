@@ -1,14 +1,21 @@
-window.list_children = (jnode) ->
+$ = window.$
+
+render_folders = (jnode, folders) ->
+    jnode.empty()
+    wrapper = $('<ul/>').addClass('side-nav').appendTo(jnode)
+    for f in folders
+        $('<a/>').attr('href', build_query_string({id:f.id})).text(f.title)
+                 .appendTo($('<li/>').appendTo(wrapper))
+
+render_files = (jnode, files) ->
+    jnode.empty()
+    for f in files
+        $('<a/>').appendTo(jnode).addClass('alert-box small success')
+                                 .attr('href', f.link).text(f.title)
+
+window.list_children = (folders_node, files_node) ->
     $ = window.$
-    fid = window.location.hash.slice(1)
-    if fid == ''
-        fid = 'root'
+    fid = get_query_params().id ? 'root'
     $.post 'drive',JSON.stringify({folder_id:fid}),(data) ->
-        origin = window.location.href
-        last_hash = origin.lastIndexOf('#')
-        if last_hash >= 0
-            origin = origin.slice(0, last_hash)
-        for f in data.folders
-            jnode.append $("<p/>").append $("<a/>").attr('href', origin + '#' + f.id).text(f.title)
-        for f in data.files
-            jnode.append $("<p/>").append $("<a/>").attr('href', f.link).text(f.title)
+        render_folders(folders_node, data.folders)
+        render_files(files_node, data.files)

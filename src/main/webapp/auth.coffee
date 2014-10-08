@@ -7,7 +7,7 @@ window.setup_auth = () ->
             console.log("Redirecting to #{data.redirect_to}")
             window.location.href = data.redirect_to
         else if data.access_token?
-            window.access_token = data.access_token
+            #window.access_token = data.access_token
             console.log("Got access token #{data.access_token}")
             andThen.resolve()
     andThen

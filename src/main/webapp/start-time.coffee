@@ -5,8 +5,8 @@ repeater = (issue_post, initial_cb, next_cb) ->
     sched_next = () ->
         window.setTimeout(on_sched, 1000)
     on_sched = () ->
-        issue_post().done(sched_next).done(next_cb)
-    issue_post().done(sched_next).done(initial_cb)
+        issue_post().done(next_cb).always(sched_next)
+    issue_post().done(initial_cb).done(sched_next)
 
 window.setup_page_reloader = () ->
     timestamp = ""

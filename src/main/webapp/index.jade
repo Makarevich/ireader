@@ -1,9 +1,9 @@
 !!! 5
 html(lang="en")
   head
-    link(rel='stylesheet' href='webjars/bootstrap/3.2.0/css/bootstrap.min.css')
+    link(rel='stylesheet' href='webjars/foundation/5.4.5/css/foundation.min.css')
     script(type='text/javascript' src='webjars/jquery/2.1.1/jquery.min.js')
-    /script(type='text/javascript' src='webjars/bootstrap/3.2.0/js/bootstrap.min.js')
+    script(type='text/javascript' src='query-lib.js')
     script(type='text/javascript' src='start-time.js')
     script(type='text/javascript' src='auth.js')
     script(type='text/javascript' src='drive.js')
@@ -11,7 +11,7 @@ html(lang="en")
       function init_all() {
         setup_page_reloader()
         setup_auth($('#auth')).done(function() {
-            list_children($('#drive'))
+            list_children($('#drive-folders'), $('#drive-files'))
         })
 
         //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
@@ -19,12 +19,20 @@ html(lang="en")
         //    console.log(msg, jqxhr, settings, exception)
         //    alert(msg)
         //});
+
+        console.log(get_query_params())
       }
       $(init_all)
   body
-    .container
-      .row
-        .col-md-8
-          #drive
-        .col-md-4
-          | Right column
+    .row
+      ul.breadcrumbs
+        li
+          a(href='#') Home
+        li
+          a(href='#') Featured
+        li.current
+          | Current
+      .column.small-4
+        #drive-folders Loading...
+      .column.small-8
+        #drive-files Loading...
