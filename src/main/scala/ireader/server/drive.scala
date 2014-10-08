@@ -28,9 +28,14 @@ class DriveSvlt extends JsonServlet {
             case JNothing => "root"
             case _ => ???
         }
+        val batcher = DriveBatcher(session.drive.get)
 
+        get_children(folder_id, batcher) ~
+        ("parents" -> get_parents(folder_id, batcher))
+    }
+
+    private def get_children(folder_id: String, batcher: DriveBatcher) = {
         val (folders_par, files_par) = {
-            val batcher = DriveBatcher(session.drive.get)
             val children = batcher.single { drive =>
                 drive.children.list(folder_id)
                               .setQ("trashed = false")
@@ -42,17 +47,33 @@ class DriveSvlt extends JsonServlet {
                     .par.partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
         }
 
-        val folders_json_future = future { folders_par.map { f=>
+        val folders_json = folders_par.map { f=>
             ("title" -> f.getTitle) ~
             ("id" -> f.getId)
-        }.seq }
-        val files_json_future = future { files_par.map { f =>
+        }.seq
+        val files_json = files_par.map { f =>
             ("title" -> f.getTitle) ~
             ("link" -> f.getAlternateLink)
-        }.seq }
+        }.seq
 
-        ("folders" -> Await.result(folders_json_future, 30.seconds)) ~
-        ("files" -> Await.result(files_json_future, 30.seconds))
+        ("folders" -> folders_json) ~
+        ("files" -> files_json)
+    }
+
+    private def get_parents(folder_id: String, batcher: DriveBatcher) = {
+        val folder = batcher.single { drive =>
+            drive.files.get(folder_id)
+        }
+        val parents = batcher.multiple { drive =>
+            folder.getParents.map { p => drive.files.get(p.getId) }
+        }
+
+        val parent_json_list = (parents :+ folder).par.map { p =>
+            ("title" -> p.getTitle) ~
+            ("id" -> p.getId)
+        }.seq
+
+        parent_json_list
     }
 }
 

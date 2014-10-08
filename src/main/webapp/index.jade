@@ -11,7 +11,7 @@ html(lang="en")
       function init_all() {
         setup_page_reloader()
         setup_auth($('#auth')).done(function() {
-            list_children($('#drive-folders'), $('#drive-files'))
+            list_children($('#drive-folders'), $('#drive-files'), $('#parents'))
         })
 
         //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
@@ -25,13 +25,7 @@ html(lang="en")
       $(init_all)
   body
     .row
-      ul.breadcrumbs
-        li
-          a(href='#') Home
-        li
-          a(href='#') Featured
-        li.current
-          | Current
+      #parents Loading...
       .column.small-4
         #drive-folders Loading...
       .column.small-8

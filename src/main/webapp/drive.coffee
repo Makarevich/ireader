@@ -13,9 +13,20 @@ render_files = (jnode, files) ->
         $('<a/>').appendTo(jnode).addClass('alert-box small success')
                                  .attr('href', f.link).text(f.title)
 
-window.list_children = (folders_node, files_node) ->
+render_parents = (jnode, parents) ->
+    jnode.empty()
+    wrapper = $('<ul/>').addClass('breadcrumbs').appendTo(jnode)
+    for p in parents[..-1]
+        link = $('<a/>').attr('href', build_query_string({id:p.id})).text(p.title)
+        wrapper.append $('<li/>').append link
+    wrapper.append $('<li/>').text(parents[-1].title).addClass('current')
+
+
+
+window.list_children = (folders_node, files_node, parents_node) ->
     $ = window.$
     fid = get_query_params().id ? 'root'
     $.post 'drive',JSON.stringify({folder_id:fid}),(data) ->
         render_folders(folders_node, data.folders)
         render_files(files_node, data.files)
+        render_parents(parents_node, data.parents)

@@ -18,16 +18,18 @@ class DriveBatcher(drive: Drive) {
     {
         val reqs = f(drive)
         val result_builder = cbf(reqs)
-        val cb = new JsonBatchCallback[T] {
-            def onSuccess(f: T, headers: HttpHeaders) {
-                result_builder += f
+        if (!reqs.isEmpty) {
+            val cb = new JsonBatchCallback[T] {
+                def onSuccess(f: T, headers: HttpHeaders) {
+                    result_builder += f
+                }
+                def onFailure(err: GoogleJsonError, headers: HttpHeaders): Unit = ???
             }
-            def onFailure(err: GoogleJsonError, headers: HttpHeaders): Unit = ???
-        }
 
-        val batch = drive.batch
-        reqs.foreach(_.queue(batch, cb))
-        batch.execute
+            val batch = drive.batch
+            reqs.foreach(_.queue(batch, cb))
+            batch.execute
+        }
         result_builder.result
     }
 }
