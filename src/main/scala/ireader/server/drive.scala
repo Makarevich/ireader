@@ -14,6 +14,8 @@ import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.client.googleapis.json.GoogleJsonError
 import com.google.api.services.drive.model.{About, File}
 
+import ireader.utils.DriveBatcher
+
 
 
 class DriveSvlt extends JsonServlet {
@@ -28,30 +30,16 @@ class DriveSvlt extends JsonServlet {
         }
 
         val (folders_par, files_par) = {
-            val drive = session.drive.get
-            val children = drive.children.list(folder_id)
-                                         .setQ("trashed = false")
-                                         .execute
-
-            val resolved_par = {
-                val batch = drive.batch
-                val file_builder = List.newBuilder[File]
-                val batch_callback = new JsonBatchCallback[File] {
-                    def onSuccess(f: File, headers: HttpHeaders) {
-                        file_builder += f
-                    }
-                    def onFailure(err: GoogleJsonError, headers: HttpHeaders): Unit = ???
-                }
-
-                children.getItems.foreach { ch =>
-                    drive.files.get(ch.getId).queue(batch, batch_callback)
-                }
-                batch.execute
-                file_builder.result
+            val batcher = DriveBatcher(session.drive.get)
+            val children = batcher.single { drive =>
+                drive.children.list(folder_id)
+                              .setQ("trashed = false")
             }
-
-            resolved_par.seq.sortBy(_.getTitle)
-                        .par.partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
+            val resolved = batcher.multiple { drive =>
+                children.getItems.map { ch => drive.files.get(ch.getId) }
+            }
+            resolved.sortBy(_.getTitle)
+                    .par.partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
         }
 
         val folders_json_future = future { folders_par.map { f=>
