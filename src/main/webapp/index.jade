@@ -11,7 +11,10 @@ html(lang="en")
       function init_all() {
         setup_page_reloader()
         setup_auth($('#auth')).done(function() {
-            list_children($('#drive-folders'), $('#drive-files'), $('#parents'))
+            list_children($('#drive-folders'),
+                          $('#drive-files'),
+                          $('#parents'),
+                          $('#folder_title'))
         })
 
         //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
@@ -26,6 +29,7 @@ html(lang="en")
   body
     .row
       #parents Loading...
+      h4#folder_title
       .column.small-4
         #drive-folders Loading...
       .column.small-8

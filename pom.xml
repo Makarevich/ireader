@@ -80,6 +80,10 @@
             <configuration>
                 <args>
                     <arg>-feature</arg>
+                    <!--
+                    <arg>-Xprint:typer</arg>
+                    <arg>-Xprint-types</arg>
+                    -->
                 </args>
             </configuration>
             <executions>

@@ -33,56 +33,59 @@ class DriveSvlt extends JsonServlet {
         val batcher1 = DriveBatcher(drive)
         val batcher2 = DriveBatcher(drive)
 
-        val f_f_parent_list = batcher1.single {
+        val f_the_folder = batcher1 {
             drive.files.get(folder_id)
-        } map { folder =>
-            batcher2.multiple {
+        }
+        val f_f_parent_list = f_the_folder map { folder =>
+            info(s"Parent count1 ${folder.getParents.size}")
+            Future.sequence {
+                info(s"Parent count2 ${folder.getParents.size}")
                 folder.getParents.map {
-                    p => drive.files.get(p.getId)
-                }
-            } map { parents =>
-                parents.map { p =>
-                    ("title" -> p.getTitle) ~
-                    ("id" -> p.getId)
+                    p => batcher2(drive.files.get(p.getId))
                 }
             }
         }
 
-        val f_f_subfiles = batcher1.single {
+        val f_f_subfiles = batcher1 {
             drive.children.list(folder_id).setQ("trashed = false")
         } map { children_list =>
-            batcher2.multiple {
-                children_list.getItems.map(ch => drive.files.get(ch.getId))
-            } map { children =>
-                val (folders, files) =
-                    children.sortBy(_.getTitle)
-                            .partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
-
-                ("folders" -> folders.map { f =>
-                    ("title" -> f.getTitle) ~
-                    ("id" -> f.getId)
-                }) ~
-                ("files" -> files.map { f =>
-                    ("title" -> f.getTitle) ~
-                    ("link" -> f.getAlternateLink)
-                })
+            Future.sequence {
+                children_list.getItems.map {
+                    ch => batcher2(drive.files.get(ch.getId))
+                }
             }
         }
 
         batcher1.execute
 
-        val Seq(f_parent_list, f_subfiles) = Await.result(Future.sequence {
+        val f_container = Await.result(Future.sequence {
             Seq(f_f_parent_list, f_f_subfiles)
         }, 30.seconds)
 
         batcher2.execute
 
-        val Seq(parent_list, subfiles) = Await.result(Future.sequence {
-            Seq(f_parent_list, f_subfiles)
-        }, 30.seconds)
+        val Seq(parents, children) =
+                Await.result(Future.sequence(f_container), 30.seconds)
+        val the_folder = Await.result(f_the_folder, 30.seconds)
+        val (folders, files) =
+            children.sortBy(_.getTitle)
+                    .partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
 
-        subfiles ~
-        ("parents" -> parent_list)
+        info(s"Parents count ${parents.size}")
+
+        ("folder_title" -> the_folder.getTitle) ~
+        ("folders" -> folders.map { f =>
+            ("title" -> f.getTitle) ~
+            ("id" -> f.getId)
+        }) ~
+        ("files" -> files.map { f =>
+            ("title" -> f.getTitle) ~
+            ("link" -> f.getAlternateLink)
+        }) ~
+        ("parents" -> parents.map { p =>
+            ("title" -> p.getTitle) ~
+            ("id" -> p.getId)
+        })
     }
 
     /*

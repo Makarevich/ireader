@@ -13,6 +13,7 @@ import com.google.api.services.drive.DriveRequest
 class DriveBatcher(drive: Drive) {
     private val batch = drive.batch
 
+    def apply[T](req: DriveRequest[T]): Future[T] = single(req)
     def single[T](req: DriveRequest[T]): Future[T] = batch.synchronized {
         val promise = Promise[T]
         val cb = new JsonBatchCallback[T] {
@@ -27,10 +28,10 @@ class DriveBatcher(drive: Drive) {
         promise.future
     }
 
-    def multiple[From <: TraversableLike[DriveRequest[_], From]]
-            (reqs: From)
-            (implicit ectxt: ExecutionContext) =
-        Future.sequence(reqs.map(r => single(r)))
+    //def multiple[T, CC[_] <: TraversableLike[DriveRequest[T], _]]
+    //        (reqs: CC[DriveRequest[T]])
+    //        (implicit ectxt: ExecutionContext) =
+    //    Future.sequence(reqs.map((r: DriveRequest[T]) => single(r)))
 
     def execute: Unit = batch.synchronized {
         batch.execute
