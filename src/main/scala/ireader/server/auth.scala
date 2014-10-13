@@ -41,12 +41,15 @@ class AuthSvlt extends JsonServlet {
         val token_response = auth_flow.newTokenRequest(auth_code.get)
                                       .setRedirectUri(augmentRediectTo(redirect_to))
                                       .execute
-        val access_token: String = token_response.getAccessToken
-        info(s"Access token: ${access_token}")
-        session.access_token.set(access_token)
+
+        {
+            val access_token: String = token_response.getAccessToken
+            info(s"Access token: ${access_token}")
+            // session.access_token.set(access_token)
+        }
 
         val creds = auth_flow.createAndStoreCredential(token_response, null)
-        session.google_creds.set(creds)
+        // session.google_creds.set(creds)
         session.drive.set(new Drive.Builder(
                             new NetHttpTransport,
                             new JacksonFactory,
@@ -57,10 +60,11 @@ class AuthSvlt extends JsonServlet {
 
     override def doPost(data: JValue): JValue = {
         {
-            val is_force = getReqParam("force")
-            val access_token_opt = session.access_token.getOption
-            if (is_force != Some("true") && !access_token_opt.isEmpty) {
-                return ("access_token" -> access_token_opt.get)
+            val is_force = (for { JField("force", JBool(force)) <- data }
+                            yield force).headOption
+            val drive_opt = session.drive.getOption
+            if (is_force != Some(true) && !drive_opt.isEmpty) {
+                return ("result" -> "OK")
             }
         }
 

@@ -10,7 +10,7 @@ html(lang="en")
     :javascript
       function init_all() {
         setup_page_reloader()
-        setup_auth($('#auth')).done(function() {
+        setup_auth($('#reauth-button')).done(function() {
             list_children($('#drive-folders'),
                           $('#drive-files'),
                           $('#parents'),
@@ -29,7 +29,12 @@ html(lang="en")
   body
     .row
       #parents Loading...
-      h4#folder_title
+    .row
+      .column.small-9
+        h4#folder_title
+      .column.small-3
+        button.button.small#reauth-button Reauth
+    .row
       .column.small-4
         #drive-folders Loading...
       .column.small-8

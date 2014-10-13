@@ -1,0 +1,24 @@
+!!! 5
+html(lang="en")
+  head
+    link(rel='stylesheet' href='webjars/foundation/5.4.5/css/foundation.min.css')
+    script(type='text/javascript' src='webjars/jquery/2.1.1/jquery.min.js')
+    script(type='text/javascript' src='query-lib.js')
+    script(type='text/javascript' src='start-time.js')
+    script(type='text/javascript' src='doc.js')
+    :javascript
+      function init_all() {
+        setup_page_reloader()
+
+        //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
+        //    var msg = "Ajax error: " + settings.url
+        //    console.log(msg, jqxhr, settings, exception)
+        //    alert(msg)
+        //});
+      }
+      $(init_all)
+  body
+    #header
+      h5 | Loading...
+    #frame
+      h5 | Loading...

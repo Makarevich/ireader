@@ -16,7 +16,7 @@ class Session(servlet_session: HttpSession) {
     }
 
     val redirect_to = new Item[String]("redirect_to")
-    val access_token = new Item[String]("access_token")
-    val google_creds = new Item[Credential]("google_credential")
+    // val access_token = new Item[String]("access_token")
+    // val google_creds = new Item[Credential]("google_credential")
     val drive = new Item[Drive]("drive")
 }
