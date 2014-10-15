@@ -1,8 +1,8 @@
 package ireader.utils
 
-import collection.TraversableLike
-import collection.generic.CanBuildFrom
-import concurrent.{Future, Promise,ExecutionContext}
+import annotation.tailrec
+import concurrent._
+import concurrent.duration._
 
 import com.google.api.client.http.HttpHeaders
 import com.google.api.client.googleapis.json.GoogleJsonError
@@ -11,10 +11,15 @@ import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveRequest
 
 class DriveBatcher(drive: Drive) {
-    private val batch = drive.batch
+    private var batch = drive.batch
+    private var listener: List[Future[Any]] = Nil
 
-    def apply[T](req: DriveRequest[T]): Future[T] = single(req)
-    def single[T](req: DriveRequest[T]): Future[T] = batch.synchronized {
+    def addListener(f: Future[Any]): Unit = synchronized {
+        listener = f :: listener
+    }
+
+    def apply[T](req: DriveRequest[T]): FutureProxy[T] = single(req)
+    def single[T](req: DriveRequest[T]): FutureProxy[T] = synchronized {
         val promise = Promise[T]
         val cb = new JsonBatchCallback[T] {
             def onSuccess(f: T, headers: HttpHeaders) {
@@ -25,7 +30,7 @@ class DriveBatcher(drive: Drive) {
             }
         }
         req.queue(batch, cb)
-        promise.future
+        new FutureProxy(promise.future, this)
     }
 
     //def multiple[T, CC[_] <: TraversableLike[DriveRequest[T], _]]
@@ -33,11 +38,44 @@ class DriveBatcher(drive: Drive) {
     //        (implicit ectxt: ExecutionContext) =
     //    Future.sequence(reqs.map((r: DriveRequest[T]) => single(r)))
 
-    def execute: Unit = batch.synchronized {
-        batch.execute
+    @tailrec
+    final def execute(implicit executor: ExecutionContext) {
+        var (wait_for, old_batch) = synchronized {
+            var wait_for = listener
+            var old_batch = batch
+
+            listener = Nil
+            batch = drive.batch
+
+            (wait_for, old_batch)
+        }
+
+        info("Executing batcher")
+        old_batch.execute
+
+        if(!wait_for.isEmpty) {
+            info(s"Waiting for ${wait_for.length} events")
+            Await.ready(Future.sequence(wait_for), 10.seconds)
+            execute
+        }
     }
 }
 
 object DriveBatcher {
     def apply(d: Drive) = new DriveBatcher(d)
+}
+
+class FutureProxy[+T] (val future: Future[T], batcher: DriveBatcher) {
+    private def addListener[S](f: Future[S]): Future[S] = {
+        batcher.addListener(f)
+        f
+    }
+
+    def map[S](f: T => S)(implicit executor: ExecutionContext): Future[S] = {
+        addListener(future.map(f))      // TODO: add FutureProxy
+    }
+
+    def flatMap[S](f: T => Future[S])(implicit executor: ExecutionContext): Future[S] = {
+        addListener(future.map(f)).flatMap(x => x)
+    }
 }

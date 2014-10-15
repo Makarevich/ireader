@@ -5,6 +5,12 @@ import java.text.DateFormat
 import org.slf4j.LoggerFactory
 
 
+package object utils {
+    lazy val logger = LoggerFactory.getLogger("utils")
+
+    def info(s: String) = logger.info(s)
+}
+
 package object server {
     lazy val logger = LoggerFactory.getLogger("server")
 
