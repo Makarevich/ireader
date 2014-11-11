@@ -1,10 +1,11 @@
 package ireader.server
 
 import javax.servlet.http._
+import org.scalatra.ScalatraServlet
 
-class StartTimeSvlt extends HttpServlet {
-    override def doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        resp.setContentType("text/plain")
-        resp.getOutputStream.println(started_on)
+class StartTimeSvlt extends ScalatraServlet {
+    post("/") {
+        info("Started on")
+        started_on
     }
 }

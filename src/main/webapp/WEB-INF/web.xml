@@ -3,6 +3,7 @@
  "http://java.sun.com/dtd/web-app_2_3.dtd" >
 
 <web-app>
+    <!--
 	<servlet>
 		<servlet-name>scalatra</servlet-name>
 		<servlet-class>
@@ -13,12 +14,18 @@
 		<servlet-name>scalatra</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
+    -->
+    <listener>
+        <listener-class>org.scalatra.servlet.ScalatraListener</listener-class>
+    </listener>
 
+    <!--
     <servlet>
         <servlet-name>DefaultInit</servlet-name>
         <servlet-class>ireader.server.InitServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
+    -->
     <!--
     <servlet>
         <servlet-name>StartTime</servlet-name>
