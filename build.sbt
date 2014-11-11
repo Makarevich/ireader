@@ -1,6 +1,3 @@
-import com.bowlingx.sbt.plugins.Wro4jPlugin._
-import Wro4jKeys._
-
 organization := "slick"
 
 name := "ireader"
@@ -25,6 +22,6 @@ libraryDependencies ++= Seq(
     "javax.servlet" % "javax.servlet-api" % "3.1.0" % "provided"
 )
 
-seq(wro4jSettings: _*)
+seq(coffeeSettings: _*)
 
-// (webappResources in Compile) <+= (targetFolder in generateResources in Compile)
+(resourceManaged in (Compile, CoffeeKeys.coffee)) <<= (target in Compile)(_ / "webapp" / "js")
