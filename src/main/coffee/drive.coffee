@@ -25,7 +25,7 @@ render_parents = (jnode, parents) ->
 window.list_children = (folders_node, files_node, parents_node, title_node) ->
     $ = window.$
     fid = get_query_params().id ? 'root'
-    $.post 'drive',JSON.stringify({folder_id:fid}),(data) ->
+    $.post 'drive',{folder_id:fid},(data) ->
         render_folders(folders_node, data.folders)
         render_files(files_node, data.files)
         render_parents(parents_node, data.parents)

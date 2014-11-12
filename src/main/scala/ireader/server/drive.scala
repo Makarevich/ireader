@@ -23,11 +23,7 @@ class DriveSvlt extends JsonSvlt {
     import ExecutionContext.Implicits.global
 
     post("/") {
-        val folder_id: String = parsedBody \ "folder_id" match {
-            case JString(s) => s
-            case JNothing => "root"
-            case _ => ???
-        }
+        val folder_id: String = params("folder_id")
 
         val drive = sess.drive.get
         val batcher = DriveBatcher(drive)

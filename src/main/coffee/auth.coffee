@@ -1,5 +1,5 @@
 make_issue_auth_req = (post_data, andThen) -> () ->
-    $.post 'auth', JSON.stringify(post_data), (data) ->
+    cb = (data) ->
         if data.redirect_to?
             console.log("Redirecting to #{data.redirect_to}")
             window.location.href = data.redirect_to
@@ -9,6 +9,7 @@ make_issue_auth_req = (post_data, andThen) -> () ->
             andThen?.resolve()
         else
             console.log "Unknown auth result", data
+    $.post 'auth', post_data, cb
 
 window.setup_auth = (reauth_node) ->
     auth_url = document.URL.match(/^(.*\/)[^\/]*$/)[1]

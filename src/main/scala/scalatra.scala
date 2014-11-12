@@ -13,5 +13,7 @@ class ScalatraBootstrap extends LifeCycle {
 
         context mount (new StaticSvlt, "/")
         context mount (new StartTimeSvlt, "/start-time")
+        context mount (new AuthSvlt, "/auth")
+        context mount (new DriveSvlt, "/drive")
     }
 }

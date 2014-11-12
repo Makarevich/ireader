@@ -24,6 +24,10 @@ class AuthSvlt extends JsonSvlt {
 
     private def augmentRediectTo(base_url: String): String = base_url + "auth"
 
+    before() {
+        contentType = formats("json")
+    }
+
     get("/") {
         val auth_code = params.get("code")
         assert(!auth_code.isEmpty)
@@ -31,7 +35,7 @@ class AuthSvlt extends JsonSvlt {
         val redirect_to: String = sess.redirect_to.get
 
         val token_response = auth_flow.newTokenRequest(auth_code.get)
-                                      .setRedirectUri(redirect_to)
+                                      .setRedirectUri(augmentRediectTo(redirect_to))
                                       .execute
 
         {
@@ -44,22 +48,24 @@ class AuthSvlt extends JsonSvlt {
                                          new JacksonFactory,
                                          creds).build)
 
+        info(s"Redirecting to ${redirect_to}")
         redirect(redirect_to)
     }
 
     post("/") {
         val is_ok = {
-            val is_force: Boolean = (parsedBody \ "force") match {
-                case JBool(v) if v => true
+
+            val is_force: Boolean =  params.get("force") match {
+                case Some("true") => true
                 case _ => false
             }
             val drive_opt = sess.drive.getOption
             is_force == false && !drive_opt.isEmpty
         }
         if(is_ok) ("result" -> "OK") else {
-            val JString(redirect_to: String) = parsedBody \ "redirect_to"
+            val redirect_to = params("redirect_to")
+            sess.redirect_to.set(redirect_to)
             val augmented_redirect = augmentRediectTo(redirect_to)
-            sess.redirect_to.set(augmented_redirect)
             val auth_url = auth_flow.newAuthorizationUrl
                                     .setRedirectUri(augmented_redirect)
                                     .build
