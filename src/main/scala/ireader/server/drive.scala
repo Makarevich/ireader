@@ -3,8 +3,8 @@ package ireader.server
 import concurrent._
 import concurrent.duration._
 
-import net.liftweb.json._
-import net.liftweb.json.JsonDSL._
+import org.json4s._
+import org.json4s.JsonDSL._
 
 import com.google.api.client.http.HttpHeaders
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -18,18 +18,18 @@ import ireader.utils.DriveBatcher
 
 
 
-class DriveSvlt extends JsonServlet {
+class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
     import ExecutionContext.Implicits.global
 
-    override def doPost(req: JValue): JValue = {
-        val folder_id: String = req \ "folder_id" match {
+    post("/") {
+        val folder_id: String = parsedBody \ "folder_id" match {
             case JString(s) => s
             case JNothing => "root"
             case _ => ???
         }
 
-        val drive = session.drive.get
+        val drive = sess.drive.get
         val batcher = DriveBatcher(drive)
 
         val f_folders = batcher {

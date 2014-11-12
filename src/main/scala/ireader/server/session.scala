@@ -2,10 +2,10 @@ package ireader.server
 
 import javax.servlet.http.HttpSession
 
-import com.google.api.client.auth.oauth2.Credential
+// import com.google.api.client.auth.oauth2.Credential
 import com.google.api.services.drive.Drive
 
-class Session(servlet_session: HttpSession) {
+class Session(implicit servlet_session: HttpSession) {
     class Item[T](key: String) {
         def getOption: Option[T] = Option {
             servlet_session.getAttribute(key).asInstanceOf[T]

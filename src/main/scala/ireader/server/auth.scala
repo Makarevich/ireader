@@ -1,8 +1,7 @@
 package ireader.server
 
-import javax.servlet.http._
-import net.liftweb.json._
-import net.liftweb.json.JsonDSL._
+import org.json4s._
+import org.json4s.JsonDSL._
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -12,12 +11,7 @@ import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 
 
-object AuthSvlt {
-    private val CLIENT_ID = "1033390415538-tfko6f392unt8drju50i763vfc5sr6v5.apps.googleusercontent.com"
-    private val CLIENT_SECRET = "VuGj-ju_qaYYQECyqgvaBBXj"
-}
-
-class AuthSvlt extends JsonServlet {
+class AuthSvlt extends JsonSvlt {
     import collection.JavaConversions._
 
     private lazy val auth_flow =
@@ -30,49 +24,51 @@ class AuthSvlt extends JsonServlet {
 
     private def augmentRediectTo(base_url: String): String = base_url + "auth"
 
-    override def doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        initRequest(req, resp)
-
-        val auth_code = getReqParam("code")
+    get("/") {
+        val auth_code = params.get("code")
         assert(!auth_code.isEmpty)
 
-        val redirect_to: String = session.redirect_to.get
+        val redirect_to: String = sess.redirect_to.get
 
         val token_response = auth_flow.newTokenRequest(auth_code.get)
-                                      .setRedirectUri(augmentRediectTo(redirect_to))
+                                      .setRedirectUri(redirect_to)
                                       .execute
 
         {
             val access_token: String = token_response.getAccessToken
             info(s"Access token: ${access_token}")
-            // session.access_token.set(access_token)
         }
 
         val creds = auth_flow.createAndStoreCredential(token_response, null)
-        // session.google_creds.set(creds)
-        session.drive.set(new Drive.Builder(
-                            new NetHttpTransport,
-                            new JacksonFactory,
-                            creds).build)
+        sess.drive.set(new Drive.Builder(new NetHttpTransport,
+                                         new JacksonFactory,
+                                         creds).build)
 
-        resp.sendRedirect(resp.encodeRedirectURL(redirect_to))
+        redirect(redirect_to)
     }
 
-    override def doPost(data: JValue): JValue = {
-        {
-            val is_force = (for { JField("force", JBool(force)) <- data }
-                            yield force).headOption
-            val drive_opt = session.drive.getOption
-            if (is_force != Some(true) && !drive_opt.isEmpty) {
-                return ("result" -> "OK")
+    post("/") {
+        val is_ok = {
+            val is_force: Boolean = (parsedBody \ "force") match {
+                case JBool(v) if v => true
+                case _ => false
             }
+            val drive_opt = sess.drive.getOption
+            is_force == false && !drive_opt.isEmpty
         }
-
-        val JString(redirect_to: String) = data \ "redirect_to"
-        session.redirect_to.set(redirect_to)
-        val auth_url = auth_flow.newAuthorizationUrl
-                                .setRedirectUri(augmentRediectTo(redirect_to))
-                                .build
-        ("redirect_to" -> auth_url)
+        if(is_ok) ("result" -> "OK") else {
+            val JString(redirect_to: String) = parsedBody \ "redirect_to"
+            val augmented_redirect = augmentRediectTo(redirect_to)
+            sess.redirect_to.set(augmented_redirect)
+            val auth_url = auth_flow.newAuthorizationUrl
+                                    .setRedirectUri(augmented_redirect)
+                                    .build
+            ("redirect_to" -> auth_url)
+        }
     }
+}
+
+object AuthSvlt {
+    private val CLIENT_ID = "1033390415538-tfko6f392unt8drju50i763vfc5sr6v5.apps.googleusercontent.com"
+    private val CLIENT_SECRET = "VuGj-ju_qaYYQECyqgvaBBXj"
 }
