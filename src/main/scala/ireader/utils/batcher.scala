@@ -73,11 +73,11 @@ class FutureProxy[+T] (val future: Future[T], batcher: DriveBatcher) {
         f
     }
 
-    def map[S](f: T => S)(implicit executor: ExecutionContext): Future[S] = {
-        addListener(future.map(f))      // TODO: add FutureProxy
+    def map[S](f: (T) => S)(implicit executor: ExecutionContext): Future[S] = {
+        addListener(future.map(f))
     }
 
-    def flatMap[S](f: T => Future[S])(implicit executor: ExecutionContext): Future[S] = {
-        addListener(future.map(f)).flatMap(x => x)
+    def flatMap[S](f: (T) => Future[S])(implicit executor: ExecutionContext): Future[S] = {
+        map(f).flatMap(x => x)
     }
 }

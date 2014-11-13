@@ -12,7 +12,7 @@ import com.google.api.client.json.jackson.JacksonFactory
 import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.client.googleapis.json.GoogleJsonError
-import com.google.api.services.drive.model.{About, File}
+import com.google.api.services.drive.model.{About, File, Property}
 
 import ireader.utils.DriveBatcher
 
@@ -27,16 +27,53 @@ class DriveSvlt extends JsonSvlt {
         val drive = sess.drive.get
         val batcher = DriveBatcher(drive)
 
-        val f_json = batcher {
+        val adjusted_importance_opt = for {
+            base <- params.get("adjust_base")
+            halflife <- params.get("adjust_halflife")
+        } yield {
+            Seq(base, halflife).mkString(" ")
+        }
+
+        val f_prop_opt: Future[Option[Property]] = adjusted_importance_opt match {
+        case Some(importance) =>
+            val prop = new Property
+            prop.setKey(DriveSvlt.IMPORTANCE_PROP)
+            prop.setValue(importance)
+
+            batcher {
+                drive.properties.update(id, prop.getKey, prop)
+            }.future.map(x => Some(x))
+        case None =>
+            batcher {
+                drive.properties.list(id)
+            } map { props =>
+                props.getItems.find(_.getKey == DriveSvlt.IMPORTANCE_PROP)
+            }
+        }
+
+        val f_base_json = batcher {
             drive.files.get(id)
         } map { file =>
             ("title" -> file.getTitle) ~
             ("view_link" -> file.getAlternateLink):JValue
         }
 
+        val f_importance_json = f_prop_opt.map { prop_opt =>
+            val json_opt = prop_opt.map { prop =>
+                val Array(base, hl) = prop.getValue.split(" ").map(_.toFloat)
+                ("base" -> base) ~
+                ("halflife" -> hl):JValue
+            }
+            json_opt.getOrElse(JNothing)
+        }
+
         batcher.execute
 
-        Await.result(f_json, 10.seconds)
+        val Seq(base, importance) = Await.result(Future.sequence{
+            Seq(f_base_json, f_importance_json)
+        }, 10.seconds)
+
+        base merge importance
     }
 
     post("/folder") {
@@ -99,4 +136,5 @@ class DriveSvlt extends JsonSvlt {
 
 object DriveSvlt {
     private val FOLDER_MIME = "application/vnd.google-apps.folder"
+    private val IMPORTANCE_PROP = "ireader_importance"
 }
