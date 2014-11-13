@@ -1,0 +1,15 @@
+body {
+    height: 100%;
+    margin: 0px;
+    padding: 0px;
+}
+
+#header {
+    height: 3cm;
+    padding: 1em;
+}
+
+body > iframe {
+    height: calc(100% - 3cm);
+    width: 100%;
+}

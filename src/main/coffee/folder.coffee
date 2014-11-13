@@ -10,8 +10,9 @@ render_folders = (jnode, folders) ->
 render_files = (jnode, files) ->
     jnode.empty()
     for f in files
+        link = "doc?id=#{f.id}"
         $('<a/>').appendTo(jnode).addClass('alert-box small success')
-                                 .attr('href', f.link).text(f.title)
+                                 .attr('href', link).text(f.title)
 
 render_parents = (jnode, parents) ->
     jnode.empty()
@@ -23,9 +24,8 @@ render_parents = (jnode, parents) ->
 
 
 window.list_children = (folders_node, files_node, parents_node, title_node) ->
-    $ = window.$
     fid = get_query_params().id ? 'root'
-    $.post 'drive',{folder_id:fid},(data) ->
+    $.post 'drive/folder',{folder_id:fid},(data) ->
         render_folders(folders_node, data.folders)
         render_files(files_node, data.files)
         render_parents(parents_node, data.parents)

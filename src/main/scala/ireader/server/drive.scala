@@ -22,7 +22,24 @@ class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
     import ExecutionContext.Implicits.global
 
-    post("/") {
+    post("/doc") {
+        val id: String = params("id")
+        val drive = sess.drive.get
+        val batcher = DriveBatcher(drive)
+
+        val f_json = batcher {
+            drive.files.get(id)
+        } map { file =>
+            ("title" -> file.getTitle) ~
+            ("view_link" -> file.getAlternateLink):JValue
+        }
+
+        batcher.execute
+
+        Await.result(f_json, 10.seconds)
+    }
+
+    post("/folder") {
         val folder_id: String = params("folder_id")
 
         val drive = sess.drive.get
@@ -62,7 +79,7 @@ class DriveSvlt extends JsonSvlt {
             //info(s"Generating children")
             ("files" -> files.map { f =>
                 ("title" -> f.getTitle) ~
-                ("link" -> f.getAlternateLink)
+                ("id" -> f.getId)
             }) ~
             ("folders" -> folders.map { p =>
                 ("title" -> p.getTitle) ~

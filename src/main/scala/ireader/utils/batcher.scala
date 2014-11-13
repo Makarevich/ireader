@@ -50,13 +50,15 @@ class DriveBatcher(drive: Drive) {
             (wait_for, old_batch)
         }
 
-        info("Executing batcher")
-        old_batch.execute
+        if (old_batch.size > 0) {
+            info("Executing batcher")
+            old_batch.execute
 
-        if(!wait_for.isEmpty) {
-            info(s"Waiting for ${wait_for.length} events")
-            Await.ready(Future.sequence(wait_for), 10.seconds)
-            execute
+            if(!wait_for.isEmpty) {
+                info(s"Waiting for ${wait_for.length} events")
+                Await.ready(Future.sequence(wait_for), 10.seconds)
+                execute
+            }
         }
     }
 }
