@@ -12,7 +12,9 @@ render_files = (jnode, files) ->
     for f in files
         link = "doc?id=#{f.id}"
         $('<a/>').appendTo(jnode).addClass('alert-box small success')
-                                 .attr('href', link).text(f.title)
+                                 .attr('href', link)
+                                 #.attr('target', '_blank')
+                                 .text(f.title)
 
 render_parents = (jnode, parents) ->
     jnode.empty()

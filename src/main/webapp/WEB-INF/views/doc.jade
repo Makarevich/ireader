@@ -15,4 +15,28 @@ html(lang="en")
       $(init_all)
   body
     #header
-      h5 | Loading...
+      .loading
+        h4 Loading...
+      .initial
+        .row
+          .column.small-8
+            h4#title
+          .column.small-4
+            button#enabler.button.alert
+              | Enable tracking
+      .detailed
+        .row
+          .column.small-6
+            button.button Read!
+          .column.small-4
+            .row
+              .column.small-3
+                label.inline(for='base')
+                  | Base
+                label.inline(for='halflife')
+                  | Halflife
+              .column.small-9
+                input#base(type='text' placeholder='base')
+                input#halflife(type='text' placeholder='halflife')
+          .column.small-2
+            button#saver.button Save
