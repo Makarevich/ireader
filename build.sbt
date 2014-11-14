@@ -14,6 +14,7 @@ libraryDependencies ++= Seq(
     "net.debasishg" %% "redisclient" % "2.13",
     // "org.webjars" % "jquery" % "2.1.1",
     "org.webjars" % "foundation" % "5.4.5",
+    "org.webjars" % "angularjs" % "1.3.2",
     "org.scalatra" %% "scalatra" % "2.3.0",
     "org.scalatra" %% "scalatra-scalate" % "2.3.0",
     "org.scalatra" %% "scalatra-json" % "2.3.0",

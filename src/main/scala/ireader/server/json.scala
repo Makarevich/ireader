@@ -9,4 +9,8 @@ trait JsonSvlt extends ScalatraServlet with JacksonJsonSupport {
     protected implicit val jsonFormats = DefaultFormats
 
     protected def sess = new Session
+
+    before() {
+        contentType = formats("json")
+    }
 }

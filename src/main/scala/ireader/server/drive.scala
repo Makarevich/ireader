@@ -77,7 +77,7 @@ class DriveSvlt extends JsonSvlt {
     }
 
     post("/folder") {
-        val folder_id: String = params("folder_id")
+        val JString(folder_id: String) = parsedBody \ "folder_id"
 
         val drive = sess.drive.get
         val batcher = DriveBatcher(drive)

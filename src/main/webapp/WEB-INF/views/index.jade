@@ -1,31 +1,31 @@
 !!! 5
-html(lang="en")
+html(lang="en")(ng-app='folderModule')
   head
     link(rel='stylesheet' href='webjars/foundation/5.4.5/css/foundation.min.css')
     script(type='text/javascript' src='webjars/jquery/2.1.0/jquery.min.js')
+    script(type='text/javascript' src='webjars/angularjs/1.3.2/angular.js')
     script(type='text/javascript' src='js/query-lib.js')
     script(type='text/javascript' src='js/start-time.js')
     script(type='text/javascript' src='js/folder.js')
     :javascript
       function init_all() {
         setup_page_reloader()
-
-        list_children($('#drive-folders'),
-                      $('#drive-files'),
-                      $('#parents'),
-                      $('#folder_title'))
       }
       $(init_all)
-  body
+  body(ng-controller='folderCtrl')
     .row
-      #parents
+      ul.breadcrumbs
+        li(ng-repeat='p in data.parents')
+          a(href='?id={{p.id}}') {{p.title}}
     .row
       .column.small-9
-        h4#folder_title
+        h4#folder_title {{data.folder_title}}
       .column.small-3
         a.button.small#reauth-button(href='/auth?force=true') Reauth
     .row
       .column.small-4
-        #drive-folders
+        ul.side-nav
+          li(ng-repeat='fld in data.folders')
+            a(href='?id={{fld.id}}') {{fld.title}}
       .column.small-8
-        #drive-files
+        a.alert-box.small.success(href='{{"doc?id=" + f.id}}')(ng-repeat='f in data.files') {{f.title}}
