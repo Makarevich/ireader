@@ -5,37 +5,27 @@ html(lang="en")
     script(type='text/javascript' src='webjars/jquery/2.1.0/jquery.min.js')
     script(type='text/javascript' src='js/query-lib.js')
     script(type='text/javascript' src='js/start-time.js')
-    script(type='text/javascript' src='js/auth.js')
     script(type='text/javascript' src='js/folder.js')
     :javascript
       function init_all() {
         setup_page_reloader()
-        setup_auth($('#reauth-button')).done(function() {
-            list_children($('#drive-folders'),
-                          $('#drive-files'),
-                          $('#parents'),
-                          $('#folder_title'))
-        })
 
-        //$( document ).ajaxError(function( event, jqxhr, settings, exception ) {
-        //    var msg = "Ajax error: " + settings.url
-        //    console.log(msg, jqxhr, settings, exception)
-        //    alert(msg)
-        //});
-
-        console.log(get_query_params())
+        list_children($('#drive-folders'),
+                      $('#drive-files'),
+                      $('#parents'),
+                      $('#folder_title'))
       }
       $(init_all)
   body
     .row
-      #parents Loading...
+      #parents
     .row
       .column.small-9
         h4#folder_title
       .column.small-3
-        button.button.small#reauth-button Reauth
+        a.button.small#reauth-button(href='/auth?force=true') Reauth
     .row
       .column.small-4
-        #drive-folders Loading...
+        #drive-folders
       .column.small-8
-        #drive-files Loading...
+        #drive-files

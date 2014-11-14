@@ -4,7 +4,7 @@ import org.scalatra.ScalatraServlet
 
 class StartTimeSvlt extends ScalatraServlet {
     post("/") {
-        info("Started on")
+        // info("Started on")
         started_on
     }
 }
