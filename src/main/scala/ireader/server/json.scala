@@ -8,5 +8,5 @@ import org.json4s.DefaultFormats
 trait JsonSvlt extends ScalatraServlet with JacksonJsonSupport {
     protected implicit val jsonFormats = DefaultFormats
 
-    def sess = new Session
+    protected def sess = new Session
 }

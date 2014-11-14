@@ -11,6 +11,7 @@ jetty()
 libraryDependencies ++= Seq(
     "com.google.apis" % "google-api-services-drive" % "v2-rev145-1.19.0",
     "com.google.http-client" % "google-http-client-jackson" % "1.19.0",
+    "net.debasishg" %% "redisclient" % "2.13",
     // "org.webjars" % "jquery" % "2.1.1",
     "org.webjars" % "foundation" % "5.4.5",
     "org.scalatra" %% "scalatra" % "2.3.0",
