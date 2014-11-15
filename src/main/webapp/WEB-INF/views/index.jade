@@ -21,11 +21,15 @@ html(lang="en")(ng-app='folderModule')
       .column.small-9
         h4#folder_title {{data.folder_title}}
       .column.small-3
-        a.button.small#reauth-button(href='/auth?force=true') Reauth
+        a.button.small.round.right(
+                href='/auth?force=true') Reauth
     .row
-      .column.small-4
+      .column.small-3
         ul.side-nav
           li(ng-repeat='fld in data.folders')
             a(href='?id={{fld.id}}') {{fld.title}}
-      .column.small-8
-        a.alert-box.small.success(href='{{"doc?id=" + f.id}}')(ng-repeat='f in data.files') {{f.title}}
+      .column.small-9
+        a.button.expand.success(
+                href='{{"doc?id=" + f.id}}'
+                ng-repeat='f in data.files') {{f.title}}
+        /a.alert-box.success(href='{{"doc?id=" + f.id}}')(ng-repeat='f in data.files') {{f.title}}

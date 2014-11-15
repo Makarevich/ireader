@@ -39,10 +39,16 @@ class Session(implicit servlet_session: HttpSession) { sess =>
     val access_token = new Item[String]("access_token") {
         import com.redis.RedisClient
 
-        private def client = new RedisClient
+        private def client_opt = {
+            try {
+                Some(new RedisClient)
+            } catch {
+                case e: java.lang.RuntimeException => None
+            }
+        }
 
         override def try_build: Option[String] = {
-            val result = client.get(Session.REDIS_KEY)
+            val result = client_opt.flatMap(_.get(Session.REDIS_KEY))
             result match {
                 case Some(_) => info("Fetched access token")
                 case None => info("Fetched NO token")
@@ -51,7 +57,8 @@ class Session(implicit servlet_session: HttpSession) { sess =>
         }
         override def store_value(value: String) {
             info("Setting to redis")
-            client.set(Session.REDIS_KEY, value)
+            client_opt.foreach(_.set(Session.REDIS_KEY, value))
+            kill_drive
         }
     }
 
@@ -68,6 +75,8 @@ class Session(implicit servlet_session: HttpSession) { sess =>
             }
         }
     }
+
+    private def kill_drive { drive.remove }
 }
 
 object Session {

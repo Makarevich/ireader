@@ -2,14 +2,17 @@ body {
     height: 100%;
     margin: 0px;
     padding: 0px;
+    overflow: hidden;
 }
 
 #header {
-    height: 3cm;
+    height: 4cm;
     padding: 1em;
+    border-bottom: 1px solid black;
 }
 
 body > iframe {
-    height: calc(100% - 3cm);
+    height: calc(100% - 4cm);
     width: 100%;
+    border: 0px;
 }

@@ -22,7 +22,9 @@ class AuthSvlt extends JsonSvlt {
             val token_response = AuthSvlt.auth_flow.newTokenRequest(auth_code)
                                                    .setRedirectUri(redirect_url)
                                                    .execute
-            sess.access_token.set(token_response.getAccessToken)
+            val access_token = token_response.getAccessToken
+            info(s"Setting new access token: ${access_token}")
+            sess.access_token.set(access_token)
             redirect(url(""))
         case None =>
             val is_ok = {
@@ -56,6 +58,6 @@ object AuthSvlt {
             new JacksonFactory,
             AuthSvlt.CLIENT_ID,
             AuthSvlt.CLIENT_SECRET,
-            List(DriveScopes.DRIVE_READONLY)).build
+            List(DriveScopes.DRIVE)).build
 
 }

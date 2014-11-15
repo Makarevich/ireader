@@ -4,39 +4,63 @@ html(lang="en")
     link(rel='stylesheet' href='webjars/foundation/5.4.5/css/foundation.min.css')
     link(rel='stylesheet' href='doc.css')
     script(type='text/javascript' src='webjars/jquery/2.1.0/jquery.min.js')
+    script(type='text/javascript' src='webjars/angularjs/1.3.2/angular.js')
     script(type='text/javascript' src='js/query-lib.js')
     script(type='text/javascript' src='js/start-time.js')
     script(type='text/javascript' src='js/doc.js')
     :javascript
       function init_all() {
         setup_page_reloader()
-        get_doc_info($('#header'))
       }
       $(init_all)
-  body
+  body(ng-app='docViewModule')(ng-controller='docInfoCtrl')
     #header
-      .loading
-        h4 Loading...
-      .initial
-        .row
-          .column.small-8
-            h4#title
-          .column.small-4
-            button#enabler.button.alert
-              | Enable tracking
-      .detailed
-        .row
+      .row
+        .column.small-1
+          h4.left
+            a(ng-href='{{back_link}}')  &#9664;
+        .loading(ng-hide='loaded')
+          h4.text-center Loading...
+        #info(ng-show='loaded && !form_visible')
+          #non-tracked(ng-show='!tracked')
+            .column.small-4
+              h4#title {{doc.title}}
+            .column.small-2
+              button.button.alert.right(
+                    ng-click='show_form()') Enable tracking
+          #detailed(ng-show='tracked')
+            .column.small-4
+              h4#title {{doc.title}}
+            .column.small-3
+              table
+                tr
+                  td Base
+                  td {{doc.base}}
+                tr
+                  td Halflife
+                  td {{doc.halflife}}
+            .column.small-2
+              button.button.expanded.right(
+                    ng-click='show_form()') Edit
+        #the-form(ng-show='form_visible'
+                  ng-controller='formCtrl')
           .column.small-6
-            button.button Read!
-          .column.small-4
             .row
               .column.small-3
                 label.inline(for='base')
                   | Base
-                label.inline(for='halflife')
+                label.inline(for='half')
                   | Halflife
               .column.small-9
-                input#base(type='text' placeholder='base')
-                input#halflife(type='text' placeholder='halflife')
+                input#base(type='text' placeholder='base'
+                           ng-model='base')
+                input#half(type='text' placeholder='halflife'
+                           ng-model='half')
           .column.small-2
-            button#saver.button Save
+            button.button.expanded(
+                    ng-class='{disabled: form_disabled}'
+                    ng-click='submit_form()') Save
+          .column.small-2
+            button.button.expanded.secondary.right(
+                    ng-click='hide_form()') Cancel
+    iframe(ng-show='frame_link' ng-src='{{frame_link}}')

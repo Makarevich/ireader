@@ -23,16 +23,22 @@ class DriveSvlt extends JsonSvlt {
     import ExecutionContext.Implicits.global
 
     post("/doc") {
-        val id: String = params("id")
+        val JString(id) = parsedBody \ "id"
+
         val drive = sess.drive.get
         val batcher = DriveBatcher(drive)
 
+
         val adjusted_importance_opt = for {
-            base <- params.get("adjust_base")
-            halflife <- params.get("adjust_halflife")
+            JInt(base) <- (parsedBody \ "adjust_base").toOption
+            JInt(halflife) <- (parsedBody \ "adjust_halflife").toOption
         } yield {
             Seq(base, halflife).mkString(" ")
         }
+
+        //adjusted_importance_opt.foreach { imp =>
+        //    info(s"Adjusting importance to ${imp}")
+        //}
 
         val f_prop_opt: Future[Option[Property]] = adjusted_importance_opt match {
         case Some(importance) =>
@@ -44,9 +50,13 @@ class DriveSvlt extends JsonSvlt {
                 drive.properties.update(id, prop.getKey, prop)
             }.future.map(x => Some(x))
         case None =>
+            //info(s"Listing props of ${id}")
             batcher {
                 drive.properties.list(id)
             } map { props =>
+                //val prop_name_list = props.getItems.map(_.getKey).mkString(", ")
+                //info(s"Found ${props.getItems.size} props: ${prop_name_list}")
+                //info(s"Pretty: ${props.toPrettyString}")
                 props.getItems.find(_.getKey == DriveSvlt.IMPORTANCE_PROP)
             }
         }
@@ -55,11 +65,13 @@ class DriveSvlt extends JsonSvlt {
             drive.files.get(id)
         } map { file =>
             ("title" -> file.getTitle) ~
+            ("parent" -> file.getParents.head.getId) ~
             ("view_link" -> file.getAlternateLink):JValue
         }
 
         val f_importance_json = f_prop_opt.map { prop_opt =>
             val json_opt = prop_opt.map { prop =>
+                info("Extracting props")
                 val Array(base, hl) = prop.getValue.split(" ").map(_.toFloat)
                 ("base" -> base) ~
                 ("halflife" -> hl):JValue
@@ -69,11 +81,11 @@ class DriveSvlt extends JsonSvlt {
 
         batcher.execute
 
-        val Seq(base, importance) = Await.result(Future.sequence{
+        val Seq(base_json, importance_json) = Await.result(Future.sequence{
             Seq(f_base_json, f_importance_json)
         }, 10.seconds)
 
-        base merge importance
+        base_json merge importance_json
     }
 
     post("/folder") {

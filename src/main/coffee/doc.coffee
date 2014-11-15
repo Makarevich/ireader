@@ -1,57 +1,68 @@
-$ = window.$
+DocInfoFetcherSvc = ($http, $q, $log) ->
+    deferred = $q.defer()
 
-show_initial_view = (hdr_node, aux_data) ->
-    console.log('initial', aux_data)
+    $log.log('Spawning fetcher service')
 
-    hdr_node.children().hide()
-    initial_frame = hdr_node.children('.initial')
-    initial_frame.show()
+    req_cb = (result) ->
+        $log.log(result)
+        deferred.notify(result)
 
-    initial_frame.find('#title').text(aux_data.title)
-    initial_frame.find('#enabler').click () ->
-        aux_data.base = '50'
-        aux_data.halflife = '5000'
-        show_detailed_view(hdr_node, aux_data)
+    err_cb = (err) ->
+        alert "Ajax error: #{err}"
 
+    svc = {
+        send_data: (aux_data) ->
+            aux_data = aux_data ? {}
+            aux_data['id'] = get_query_params().id
+            $http.post('drive/doc', aux_data)
+            .success(req_cb)
+            .error(err_cb)
 
-show_detailed_view = (hdr_node, aux_data) ->
-    console.log('detailed', aux_data)
-    hdr_node.children().hide()
-    frame = hdr_node.children('.detailed')
-    frame.show()
+        on_new_data: (cb) ->
+            deferred.promise.finally null, cb
+    }
 
-    base_input = frame.find('#base')
-    halflife_input = frame.find('#halflife')
-    saver_btn = frame.find('#saver')
+    svc.send_data()
+    svc
 
-    base_input.val(aux_data.base)
-    halflife_input.val(aux_data.halflife)
+DocInfoCtrl = ($scope, $sce, fetcher) ->
+    $scope.back_link = '/'
 
-    saver_btn.click () ->
-        data =
-            'id': get_query_params().id
-            'adjusted_base': base_input.val()
-            'adjusted_halflife': halflife_input.val()
-        saver_btn.attr('disabled', 'disabled')
-        $.post 'drive/doc', data, (updated_data) ->
-            saver_btn.removeAttr('disabled')
-            console.log(updated_data)
+    $scope.show_form = ->
+        $scope.form_visible = true
+    $scope.hide_form = ->
+        $scope.form_visible = false
 
+    fetcher.on_new_data (data) ->
+        $scope.loaded = true
+        $scope.doc = data
+        $scope.tracked = data.base and data.halflife
+        $scope.frame_link = $sce.trustAsResourceUrl(data.view_link)
+        $scope.back_link = "/?id=#{data.parent}"
+        $scope.hide_form()
 
-window.get_doc_info = (header_node) ->
-    id = get_query_params().id
-    if not id
-        alert 'Empty doc id'
-        return 0
+FormCtrl = ($scope, fetcher) ->
+    $scope.base = '50'
+    $scope.half = '10000'
+    $scope.submit_form = ->
+        $scope.form_disabled = true
+        fetcher.send_data {
+            adjust_base: Number($scope.base)
+            adjust_halflife: Number($scope.half)
+        }
 
-    header_node.children().not('.loading').hide()
+    fetcher.on_new_data (data) ->
+        $scope.form_disabled = false
+        if data.base
+            $scope.base = data.base
+        if data.halflife
+            $scope.half = data.halflife
 
-    $.post 'drive/doc', {id:id}, (data) ->
-        $('<iframe/>').attr('src', data.view_link).insertAfter(header_node)
-
-        if data.base and data.halflife
-            show_detailed_view header_node,data
-        else
-            show_initial_view header_node,data
-
-    
+angular
+.module('docViewModule', [])
+.service('docInfoFetcher',
+         ['$http', '$q', '$log', DocInfoFetcherSvc])
+.controller('docInfoCtrl',
+            ['$scope', '$sce', 'docInfoFetcher', DocInfoCtrl])
+.controller('formCtrl',
+            ['$scope', 'docInfoFetcher', FormCtrl])
