@@ -29,36 +29,31 @@ class DriveSvlt extends JsonSvlt {
         val batcher = DriveBatcher(drive)
 
 
-        val adjusted_importance_opt = for {
-            JInt(base) <- (parsedBody \ "adjust_base").toOption
-            JInt(halflife) <- (parsedBody \ "adjust_halflife").toOption
-        } yield {
-            Seq(base, halflife).mkString(" ")
-        }
+        val f_prop_opt: Future[Option[Property]] = parsedBody \ "action" match {
+        case JString("update") =>
+            val JInt(base) = parsedBody \ "base"
+            val JInt(halflife) = parsedBody \ "halflife"
 
-        //adjusted_importance_opt.foreach { imp =>
-        //    info(s"Adjusting importance to ${imp}")
-        //}
-
-        val f_prop_opt: Future[Option[Property]] = adjusted_importance_opt match {
-        case Some(importance) =>
             val prop = new Property
             prop.setKey(DriveSvlt.IMPORTANCE_PROP)
-            prop.setValue(importance)
+            prop.setValue(Seq(base, halflife).mkString(" "))
 
             batcher {
                 drive.properties.update(id, prop.getKey, prop)
             }.future.map(x => Some(x))
-        case None =>
-            //info(s"Listing props of ${id}")
+        case JString("untrack") =>
+            batcher {
+                drive.properties.delete(id, DriveSvlt.IMPORTANCE_PROP)
+            }
+            Future.successful(None)
+        case JNothing =>
             batcher {
                 drive.properties.list(id)
             } map { props =>
-                //val prop_name_list = props.getItems.map(_.getKey).mkString(", ")
-                //info(s"Found ${props.getItems.size} props: ${prop_name_list}")
-                //info(s"Pretty: ${props.toPrettyString}")
                 props.getItems.find(_.getKey == DriveSvlt.IMPORTANCE_PROP)
             }
+        case _ =>
+            throw new java.lang.RuntimeException("Unknown action value")
         }
 
         val f_base_json = batcher {

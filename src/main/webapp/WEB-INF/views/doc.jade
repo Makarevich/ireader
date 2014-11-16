@@ -2,14 +2,24 @@
 html(lang="en")
   head
     link(rel='stylesheet' href='webjars/foundation/5.4.5/css/foundation.min.css')
+    link(rel='stylesheet' href='webjars/foundation-icon-fonts/d596a3cfb3/foundation-icons.css')
     link(rel='stylesheet' href='doc.css')
     script(type='text/javascript' src='webjars/jquery/2.1.0/jquery.min.js')
+    script(type='text/javascript' src='webjars/foundation/5.4.5/js/foundation.min.js')
+    /script(type='text/javascript' src='webjars/foundation/5.4.5/js/foundation/foundation.reveal.js')
     script(type='text/javascript' src='webjars/angularjs/1.3.2/angular.js')
     script(type='text/javascript' src='js/query-lib.js')
     script(type='text/javascript' src='js/start-time.js')
     script(type='text/javascript' src='js/doc.js')
     :javascript
       function init_all() {
+        $(document).foundation()
+
+        window.close_form_modal = function () {
+            $('#update-form').foundation('reveal', 'close')
+            $('#untrack-form').foundation('reveal', 'close')
+        }
+
         setup_page_reloader()
       }
       $(init_all)
@@ -17,20 +27,29 @@ html(lang="en")
     #header
       .row
         .column.small-1
-          h4.left
-            a(ng-href='{{back_link}}')  &#9664;
+          .row
+            h3
+              a.fi-arrow-left(title='Back'
+                              ng-href='{{back_link}}')
+          .row
+            h3
+              a.fi-arrows-expand(target='_blank'
+                                 title='Open in new window'
+                                 ng-href='{{frame_link}}')
         .loading(ng-hide='loaded')
           h4.text-center Loading...
-        #info(ng-show='loaded && !form_visible')
+        #info(ng-show='loaded')
+          .column.small-4
+            h4#title {{doc.title}}
           #non-tracked(ng-show='!tracked')
-            .column.small-4
-              h4#title {{doc.title}}
+            .column.small-1
             .column.small-2
-              button.button.alert.right(
-                    ng-click='show_form()') Enable tracking
+              .row
+                h1
+                  a.alert.expanded.fi-page-add(
+                        href='#' title='Track'
+                        data-reveal-id='update-form')
           #detailed(ng-show='tracked')
-            .column.small-4
-              h4#title {{doc.title}}
             .column.small-3
               table
                 tr
@@ -40,27 +59,45 @@ html(lang="en")
                   td Halflife
                   td {{doc.halflife}}
             .column.small-2
-              button.button.expanded.right(
-                    ng-click='show_form()') Edit
-        #the-form(ng-show='form_visible'
-                  ng-controller='formCtrl')
-          .column.small-6
-            .row
-              .column.small-3
-                label.inline(for='base')
-                  | Base
-                label.inline(for='half')
-                  | Halflife
-              .column.small-9
-                input#base(type='text' placeholder='base'
-                           ng-model='base')
-                input#half(type='text' placeholder='halflife'
-                           ng-model='half')
-          .column.small-2
-            button.button.expanded(
-                    ng-class='{disabled: form_disabled}'
-                    ng-click='submit_form()') Save
-          .column.small-2
-            button.button.expanded.secondary.right(
-                    ng-click='hide_form()') Cancel
-    iframe(ng-show='frame_link' ng-src='{{frame_link}}')
+              .row
+                h3
+                  a.expanded.fi-pencil(
+                            href='#'
+                            title='Update'
+                            data-reveal-id='update-form')
+              .row
+                h3
+                  a.expanded.fi-page-remove(
+                            href='#'
+                            title='Untrack'
+                            data-reveal-id='untrack-form')
+        #update-form.reveal-modal(ng-controller='formCtrl'
+                                  data-reveal='')
+          .row
+            .column.small-8
+              .row
+                .column.small-3
+                  label.inline(for='base')
+                    | Base
+                  label.inline(for='half')
+                    | Halflife
+                .column.small-9
+                  input#base(type='text' placeholder='base'
+                             ng-model='base')
+                  input#half(type='text' placeholder='halflife'
+                             ng-model='half')
+            .column.small-2
+              / TODO: Switch this button to an icon
+              button.button.expanded(
+                      ng-class='{disabled: form_disabled}'
+                      ng-click='submit_form()') Save
+            .column.small-2
+              a.close-reveal-modal.fi-x
+        #untrack-form.reveal-modal(data-reveal='')
+          .row
+            .column.small-10
+              button.expand.alert(ng-click='untrack()')
+                | Really, untrack?
+            .column.small-2
+              a.close-reveal-modal.fi-x
+    /iframe(ng-show='frame_link' ng-src='{{frame_link}}')

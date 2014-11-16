@@ -1,8 +1,6 @@
 DocInfoFetcherSvc = ($http, $q, $log) ->
     deferred = $q.defer()
 
-    $log.log('Spawning fetcher service')
-
     req_cb = (result) ->
         $log.log(result)
         deferred.notify(result)
@@ -25,13 +23,15 @@ DocInfoFetcherSvc = ($http, $q, $log) ->
     svc.send_data()
     svc
 
-DocInfoCtrl = ($scope, $sce, fetcher) ->
+DocInfoCtrl = ($scope, $sce, $window, fetcher) ->
     $scope.back_link = '/'
 
-    $scope.show_form = ->
-        $scope.form_visible = true
-    $scope.hide_form = ->
-        $scope.form_visible = false
+    $scope.untrack = ->
+        fetcher.send_data
+            action: 'untrack'
+
+    $scope.close_all_forms = ->
+        $window.close_form_modal()
 
     fetcher.on_new_data (data) ->
         $scope.loaded = true
@@ -39,17 +39,17 @@ DocInfoCtrl = ($scope, $sce, fetcher) ->
         $scope.tracked = data.base and data.halflife
         $scope.frame_link = $sce.trustAsResourceUrl(data.view_link)
         $scope.back_link = "/?id=#{data.parent}"
-        $scope.hide_form()
+        $scope.close_all_forms()
 
 FormCtrl = ($scope, fetcher) ->
     $scope.base = '50'
     $scope.half = '10000'
     $scope.submit_form = ->
         $scope.form_disabled = true
-        fetcher.send_data {
-            adjust_base: Number($scope.base)
-            adjust_halflife: Number($scope.half)
-        }
+        fetcher.send_data
+            action: 'update'
+            base: Number($scope.base)
+            halflife: Number($scope.half)
 
     fetcher.on_new_data (data) ->
         $scope.form_disabled = false
@@ -63,6 +63,6 @@ angular
 .service('docInfoFetcher',
          ['$http', '$q', '$log', DocInfoFetcherSvc])
 .controller('docInfoCtrl',
-            ['$scope', '$sce', 'docInfoFetcher', DocInfoCtrl])
+            ['$scope', '$sce', '$window', 'docInfoFetcher', DocInfoCtrl])
 .controller('formCtrl',
             ['$scope', 'docInfoFetcher', FormCtrl])
