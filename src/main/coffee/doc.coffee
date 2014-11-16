@@ -44,27 +44,27 @@ DocInfoCtrl = ($scope, $sce, $window, fetcher) ->
     fetcher.on_new_data (data) ->
         $scope.loaded = true
         $scope.doc = data
-        $scope.tracked = data.base and data.halflife and data.timestamp
+        $scope.tracked = data.base and data.half and data.ts
         $scope.frame_link = $sce.trustAsResourceUrl(data.view_link)
         $scope.back_link = "/?id=#{data.parent}"
         $scope.close_all_forms()
 
 FormCtrl = ($scope, fetcher) ->
     $scope.base = '50'
-    $scope.half = '10000'
+    $scope.half = '10'
     $scope.submit_form = ->
         $scope.form_disabled = true
         fetcher.send_data
-            action: 'update'
+            action: if $scope.tracked then 'update' else 'init'
             base: Number($scope.base)
-            halflife: Number($scope.half)
+            half: Number($scope.half)
 
     fetcher.on_new_data (data) ->
         $scope.form_disabled = false
         if data.base
             $scope.base = data.base
-        if data.halflife
-            $scope.half = data.halflife
+        if data.half
+            $scope.half = data.half
 
 angular
 .module('docViewModule', [])

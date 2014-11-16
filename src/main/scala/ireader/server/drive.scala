@@ -2,11 +2,10 @@ package ireader.server
 
 import concurrent._
 import concurrent.duration._
-import java.util.Date
 
 import org.json4s._
 import org.json4s.JsonDSL._
-// import org.json4s.jackson.Serialization
+import org.json4s.jackson.Serialization
 
 import com.google.api.client.http.HttpHeaders
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -16,16 +15,12 @@ import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.client.googleapis.json.GoogleJsonError
 import com.google.api.services.drive.model.{About, File, Property}
 
-import ireader.utils.DriveBatcher
+import ireader.utils._
 
-
-// case class PropertyRecord(base: Int, halflife: Int)
 
 class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
     import ExecutionContext.Implicits.global
-
-    //implicit private val formats = Serialization.formats(NoTypeHints)
 
     post("/doc") {
         val JString(id) = parsedBody \ "id"
@@ -39,9 +34,9 @@ class DriveSvlt extends JsonSvlt {
         }
 
         val f_prop_opt: Future[Option[Property]] = parsedBody \ "action" match {
-        case JString("update") =>
+        case JString("init") | JString("update") =>
             val JInt(base) = parsedBody \ "base"
-            val JInt(halflife) = parsedBody \ "halflife"
+            val JInt(halflife) = parsedBody \ "half"
             val prop_string = Seq(base, halflife).mkString(" ")
 
             val prop = new Property
@@ -63,10 +58,10 @@ class DriveSvlt extends JsonSvlt {
         }
 
         val f_ts_opt: Future[Option[Property]] = parsedBody \ "action" match {
-        case JString("update") | JString("read") =>
+        case JString("init") | JString("read") =>
             val prop = new Property
             prop.setKey(DriveSvlt.TIMESTAMP_PROP)
-            prop.setValue((new Date).toString)
+            prop.setValue(getCurrentTime.toString)
 
             batcher {
                 drive.properties.update(id, prop.getKey, prop)
@@ -97,10 +92,13 @@ class DriveSvlt extends JsonSvlt {
                 ts <- ts_opt
             } yield {
                 info(s"Extracting prop: ${prop.getValue}")
-                val Array(base, halflife) = prop.getValue.split(" ").map(_.toFloat)
-                ("base" -> base) ~
-                ("halflife" -> halflife) ~
-                ("timestamp" -> ts.getValue):JValue
+                val Array(base, half) = prop.getValue.split(" ").map(_.toInt)
+                val doc = DocRecord.inflate(base,
+                                            half,
+                                            ts.getValue.toLong,
+                                            getCurrentTime)
+                info(s"Described: ${doc}")
+                Extraction.decompose(doc)
             }
             json_opt.getOrElse(JNothing)
         }
@@ -166,7 +164,7 @@ class DriveSvlt extends JsonSvlt {
 
         val Seq(folders, children) = Await.result(Future.sequence {
             Seq(f_folders, f_children)
-        }, 20.seconds)
+        }, 10.seconds)
 
         folders merge children
     }

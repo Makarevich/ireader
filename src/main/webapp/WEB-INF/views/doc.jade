@@ -39,7 +39,7 @@ html(lang="en")
         .loading(ng-hide='loaded')
           h4.text-center Loading...
         #info(ng-show='loaded')
-          .column.small-3
+          .column.small-2
             h4#title {{doc.title}}
           #non-tracked(ng-show='!tracked')
             .column.small-1
@@ -50,23 +50,30 @@ html(lang="en")
                         href='#' title='Track'
                         data-reveal-id='update-form')
           #detailed(ng-show='tracked')
-            .column.small-5
-              table
+            .column.small-7.clearfix
+              table.left
+                tr
+                  td Current
+                  td {{doc.current | limitTo:5}}
                 tr
                   td Base
                   td {{doc.base}}
                 tr
                   td Halflife
-                  td {{doc.halflife}}
+                  td {{doc.half}}
+              table.left
                 tr
                   td Timestamp
-                  td {{doc.timestamp}}
+                  td {{doc.ts}}
+                tr
+                  td Deadline
+                  td {{doc.deadline}}
             .column.small-1
               h3
                 a.fi-check(href='#'
                            title='Read the doc'
                            ng-click='read_the_doc()')
-            .column.small-2
+            .column.small-1
               .row
                 h3
                   a.fi-pencil(href='#'
