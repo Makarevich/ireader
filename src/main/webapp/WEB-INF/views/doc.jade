@@ -39,7 +39,7 @@ html(lang="en")
         .loading(ng-hide='loaded')
           h4.text-center Loading...
         #info(ng-show='loaded')
-          .column.small-4
+          .column.small-3
             h4#title {{doc.title}}
           #non-tracked(ng-show='!tracked')
             .column.small-1
@@ -50,7 +50,7 @@ html(lang="en")
                         href='#' title='Track'
                         data-reveal-id='update-form')
           #detailed(ng-show='tracked')
-            .column.small-3
+            .column.small-5
               table
                 tr
                   td Base
@@ -58,19 +58,25 @@ html(lang="en")
                 tr
                   td Halflife
                   td {{doc.halflife}}
+                tr
+                  td Timestamp
+                  td {{doc.timestamp}}
+            .column.small-1
+              h3
+                a.fi-check(href='#'
+                           title='Read the doc'
+                           ng-click='read_the_doc()')
             .column.small-2
               .row
                 h3
-                  a.expanded.fi-pencil(
-                            href='#'
-                            title='Update'
-                            data-reveal-id='update-form')
+                  a.fi-pencil(href='#'
+                              title='Update'
+                              data-reveal-id='update-form')
               .row
                 h3
-                  a.expanded.fi-page-remove(
-                            href='#'
-                            title='Untrack'
-                            data-reveal-id='untrack-form')
+                  a.fi-page-remove(href='#'
+                                   title='Untrack'
+                                   data-reveal-id='untrack-form')
         #update-form.reveal-modal(ng-controller='formCtrl'
                                   data-reveal='')
           .row
@@ -87,10 +93,9 @@ html(lang="en")
                   input#half(type='text' placeholder='halflife'
                              ng-model='half')
             .column.small-2
-              / TODO: Switch this button to an icon
-              button.button.expanded(
-                      ng-class='{disabled: form_disabled}'
-                      ng-click='submit_form()') Save
+              h3
+                a.fi-check(ng-class='{disabled: form_disabled}'
+                           ng-click='submit_form()')
             .column.small-2
               a.close-reveal-modal.fi-x
         #untrack-form.reveal-modal(data-reveal='')

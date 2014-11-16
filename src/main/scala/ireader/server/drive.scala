@@ -2,9 +2,11 @@ package ireader.server
 
 import concurrent._
 import concurrent.duration._
+import java.util.Date
 
 import org.json4s._
 import org.json4s.JsonDSL._
+// import org.json4s.jackson.Serialization
 
 import com.google.api.client.http.HttpHeaders
 import com.google.api.client.http.javanet.NetHttpTransport
@@ -17,10 +19,13 @@ import com.google.api.services.drive.model.{About, File, Property}
 import ireader.utils.DriveBatcher
 
 
+// case class PropertyRecord(base: Int, halflife: Int)
 
 class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
     import ExecutionContext.Implicits.global
+
+    //implicit private val formats = Serialization.formats(NoTypeHints)
 
     post("/doc") {
         val JString(id) = parsedBody \ "id"
@@ -29,14 +34,19 @@ class DriveSvlt extends JsonSvlt {
         val batcher = DriveBatcher(drive)
 
 
+        lazy val prop_list_future = batcher {
+            drive.properties.list(id)
+        }
+
         val f_prop_opt: Future[Option[Property]] = parsedBody \ "action" match {
         case JString("update") =>
             val JInt(base) = parsedBody \ "base"
             val JInt(halflife) = parsedBody \ "halflife"
+            val prop_string = Seq(base, halflife).mkString(" ")
 
             val prop = new Property
             prop.setKey(DriveSvlt.IMPORTANCE_PROP)
-            prop.setValue(Seq(base, halflife).mkString(" "))
+            prop.setValue(prop_string)
 
             batcher {
                 drive.properties.update(id, prop.getKey, prop)
@@ -46,14 +56,30 @@ class DriveSvlt extends JsonSvlt {
                 drive.properties.delete(id, DriveSvlt.IMPORTANCE_PROP)
             }
             Future.successful(None)
-        case JNothing =>
-            batcher {
-                drive.properties.list(id)
-            } map { props =>
+        case _ =>
+            prop_list_future map { props =>
                 props.getItems.find(_.getKey == DriveSvlt.IMPORTANCE_PROP)
             }
+        }
+
+        val f_ts_opt: Future[Option[Property]] = parsedBody \ "action" match {
+        case JString("update") | JString("read") =>
+            val prop = new Property
+            prop.setKey(DriveSvlt.TIMESTAMP_PROP)
+            prop.setValue((new Date).toString)
+
+            batcher {
+                drive.properties.update(id, prop.getKey, prop)
+            }.future.map(x => Some(x))
+        case JString("untrack") =>
+            batcher {
+                drive.properties.delete(id, DriveSvlt.TIMESTAMP_PROP)
+            }
+            Future.successful(None)
         case _ =>
-            throw new java.lang.RuntimeException("Unknown action value")
+            prop_list_future map { props =>
+                props.getItems.find(_.getKey == DriveSvlt.TIMESTAMP_PROP)
+            }
         }
 
         val f_base_json = batcher {
@@ -64,23 +90,28 @@ class DriveSvlt extends JsonSvlt {
             ("view_link" -> file.getAlternateLink):JValue
         }
 
-        val f_importance_json = f_prop_opt.map { prop_opt =>
-            val json_opt = prop_opt.map { prop =>
-                info("Extracting props")
-                val Array(base, hl) = prop.getValue.split(" ").map(_.toFloat)
+        val f_props_json = Future.sequence(Seq(f_prop_opt, f_ts_opt)).map { opts =>
+            val Seq(prop_opt, ts_opt) = opts
+            val json_opt = for {
+                prop <- prop_opt
+                ts <- ts_opt
+            } yield {
+                info(s"Extracting prop: ${prop.getValue}")
+                val Array(base, halflife) = prop.getValue.split(" ").map(_.toFloat)
                 ("base" -> base) ~
-                ("halflife" -> hl):JValue
+                ("halflife" -> halflife) ~
+                ("timestamp" -> ts.getValue):JValue
             }
             json_opt.getOrElse(JNothing)
         }
 
         batcher.execute
 
-        val Seq(base_json, importance_json) = Await.result(Future.sequence{
-            Seq(f_base_json, f_importance_json)
+        val Seq(base_json, props_json) = Await.result(Future.sequence{
+            Seq(f_base_json, f_props_json)
         }, 10.seconds)
 
-        base_json merge importance_json
+        base_json merge props_json
     }
 
     post("/folder") {
@@ -144,4 +175,5 @@ class DriveSvlt extends JsonSvlt {
 object DriveSvlt {
     private val FOLDER_MIME = "application/vnd.google-apps.folder"
     private val IMPORTANCE_PROP = "ireader_importance"
+    private val TIMESTAMP_PROP = "ireader_timestamp"
 }

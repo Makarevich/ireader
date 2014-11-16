@@ -51,7 +51,7 @@ class DriveBatcher(drive: Drive) {
         }
 
         if (old_batch.size > 0) {
-            info("Executing batcher")
+            info(s"Executing batcher x ${old_batch.size}")
             old_batch.execute
 
             if(!wait_for.isEmpty) {
