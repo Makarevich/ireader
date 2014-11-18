@@ -22,6 +22,63 @@ class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
     import ExecutionContext.Implicits.global
 
+    get("/queue") {
+        val drive = sess.drive.get
+        val batcher = DriveBatcher(drive)
+
+        val f_file_jsons = batcher {
+            val req = drive.files.list
+            .setQ("trashed = false and " +
+                  s"properties has { key='${DriveSvlt.IMPORTANCE_PROP}' } " +
+                  s"and properties has { key='${DriveSvlt.TIMESTAMP_PROP}' }")
+            info(s"Q = ${req.getQ}")
+            req
+        }.flatMap { file_list =>
+            Future.sequence {
+                file_list.getItems.map { file =>
+                    val base =
+                    ("title" -> file.getTitle) ~
+                    ("parent" -> file.getParents.head.getId) ~
+                    ("view_link" -> file.getAlternateLink):JValue
+
+                    val f_imp = batcher {
+                        drive.properties.get(file.getId, DriveSvlt.IMPORTANCE_PROP)
+                    }.future.map(_.getValue)
+                    val f_time = batcher {
+                        drive.properties.get(file.getId, DriveSvlt.TIMESTAMP_PROP)
+                    }.future.map(_.getValue)
+
+                    val f_file_record = for {
+                        imp <- f_imp
+                        ts <- f_time
+                    } yield {
+                        val Array(base, half) = imp.split(" ").map(_.toInt)
+                        DocRecord.inflate(base,
+                                          half,
+                                          ts.toLong,
+                                          getCurrentTime)
+                    }
+                    f_file_record.map(rec => (file, rec))
+                }
+            }
+        }.future.map { file_info_list =>
+            file_info_list
+            .sortBy { case (file, rec) => rec.current }
+            .map { case (file, record) =>
+                val base = ("title" -> file.getTitle) ~
+                           ("parent" -> file.getParents.head.getId) ~
+                           ("view_link" -> file.getAlternateLink):JValue
+                base merge Extraction.decompose(record)
+            }
+        }
+
+        batcher.execute
+
+        val file_jsons = Await.result(f_file_jsons, 10.seconds)
+
+        ("files" -> file_jsons)
+    }
+
     post("/doc") {
         val JString(id) = parsedBody \ "id"
 
@@ -31,7 +88,7 @@ class DriveSvlt extends JsonSvlt {
 
         lazy val prop_list_future = batcher {
             drive.properties.list(id)
-        }
+        }.future
 
         val f_prop_opt: Future[Option[Property]] = parsedBody \ "action" match {
         case JString("init") | JString("update") =>
@@ -45,7 +102,7 @@ class DriveSvlt extends JsonSvlt {
 
             batcher {
                 drive.properties.update(id, prop.getKey, prop)
-            }.future.map(x => Some(x))
+            }.map(x => Some(x)).future
         case JString("untrack") =>
             batcher {
                 drive.properties.delete(id, DriveSvlt.IMPORTANCE_PROP)
@@ -65,7 +122,7 @@ class DriveSvlt extends JsonSvlt {
 
             batcher {
                 drive.properties.update(id, prop.getKey, prop)
-            }.future.map(x => Some(x))
+            }.map(x => Some(x)).future
         case JString("untrack") =>
             batcher {
                 drive.properties.delete(id, DriveSvlt.TIMESTAMP_PROP)
@@ -106,7 +163,7 @@ class DriveSvlt extends JsonSvlt {
         batcher.execute
 
         val Seq(base_json, props_json) = Await.result(Future.sequence{
-            Seq(f_base_json, f_props_json)
+            Seq(f_base_json.future, f_props_json)
         }, 10.seconds)
 
         base_json merge props_json
@@ -120,32 +177,34 @@ class DriveSvlt extends JsonSvlt {
 
         val f_folders = batcher {
             drive.files.get(folder_id)
-        } flatMap { folder =>
+        }.flatMap { folder =>
             info(s"Parent count1 ${folder.getParents.size}")
             Future.sequence {
                 info(s"Parent count2 ${folder.getParents.size}")
                 folder.getParents.map {
                     p => batcher(drive.files.get(p.getId)).future
                 }
-            } map { parent_list =>
-                //info(s"Generating parents")
-                ("folder_title" -> folder.getTitle) ~
-                ("parents" -> parent_list.map { f =>
-                    ("title" -> f.getTitle) ~
-                    ("id" -> f.getId)
-                }):JValue
+            } map { plist =>
+                (folder, plist)
             }
+        }.future.map { case (folder, parent_list) =>
+            //info(s"Generating parents")
+            ("folder_title" -> folder.getTitle) ~
+            ("parents" -> parent_list.map { f =>
+                ("title" -> f.getTitle) ~
+                ("id" -> f.getId)
+            }):JValue
         }
 
         val f_children = batcher {
             drive.children.list(folder_id).setQ("trashed = false")
-        } flatMap { children_list =>
+        }.flatMap { children_list =>
             Future.sequence {
                 children_list.getItems.map {
                     ch => batcher(drive.files.get(ch.getId)).future
                 }
             }
-        } map { children =>
+        }.future.map { children =>
             val (folders, files) =
                 children.sortBy(_.getTitle)
                         .partition(_.getMimeType == DriveSvlt.FOLDER_MIME)

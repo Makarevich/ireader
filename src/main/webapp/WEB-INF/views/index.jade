@@ -18,11 +18,13 @@ html(lang="en")(ng-app='folderModule')
         li(ng-repeat='p in data.parents')
           a(href='?id={{p.id}}') {{p.title}}
     .row
-      .column.small-9
+      .column.small-6
         h4#folder_title {{data.folder_title}}
-      .column.small-3
+      .column.small-6
         a.button.small.round.right(
                 href='/auth?force=true') Reauth
+        a.button.small.round.right(
+                href='/queue') Queue
     .row
       .column.small-3
         ul.side-nav

@@ -55,7 +55,8 @@ class DriveBatcher(drive: Drive) {
             old_batch.execute
 
             if(!wait_for.isEmpty) {
-                info(s"Waiting for ${wait_for.length} events")
+                val waits = wait_for.map(_.toString).mkString(",")
+                info(s"Waiting for ${wait_for.length} events: ${waits}")
                 Await.ready(Future.sequence(wait_for), 10.seconds)
                 execute
             }
@@ -73,11 +74,16 @@ class FutureProxy[+T] (val future: Future[T], batcher: DriveBatcher) {
         f
     }
 
-    def map[S](f: (T) => S)(implicit executor: ExecutionContext): Future[S] = {
-        addListener(future.map(f))
+    private def wrap[S](f: Future[S]): FutureProxy[S] = {
+        info(s"Wrapping ${f}")
+        new FutureProxy(f, batcher)
     }
 
-    def flatMap[S](f: (T) => Future[S])(implicit executor: ExecutionContext): Future[S] = {
-        map(f).flatMap(x => x)
+    def map[S](f: (T) => S)(implicit executor: ExecutionContext): FutureProxy[S] = {
+        wrap(addListener(future.map(f)))
+    }
+
+    def flatMap[S](f: (T) => Future[S])(implicit executor: ExecutionContext): FutureProxy[S] = {
+        wrap(addListener(future.map(f)).flatMap(x => x))
     }
 }
