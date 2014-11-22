@@ -1,7 +1,6 @@
 package ireader.server
 
-import concurrent._
-import concurrent.duration._
+import concurrent.Future
 
 import org.json4s._
 import org.json4s.JsonDSL._
@@ -17,10 +16,8 @@ import com.google.api.services.drive.model.{File, Property}
 
 import ireader.utils._
 
-
 class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
-    import ExecutionContext.Implicits.global
 
     post("/folder") {
         val JString(folder_id: String) = parsedBody \ "folder_id"
@@ -70,11 +67,9 @@ class DriveSvlt extends JsonSvlt {
 
         drive.execute
 
-        val Seq(folders, children) = Await.result(Future.sequence {
-            Seq(f_folders, f_children)
-        }, 10.seconds)
-
-        folders merge children
+        f_folders zip f_children map { case (folders, children) =>
+            folders merge children
+        }
     }
 
     /*

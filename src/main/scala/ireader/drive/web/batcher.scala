@@ -61,6 +61,8 @@ class DriveBatcher(drive: Drive) {
                 info(s"Waiting for ${wait_for.length} events")
                 Await.ready(Future.sequence(wait_for), 10.seconds)
                 execute
+            } else {
+                info(s"Batcher finished")
             }
         }
     }

@@ -1,12 +1,14 @@
 package ireader.server
 
 import org.scalatra.ScalatraServlet
+import org.scalatra.FutureSupport
 import org.scalatra.json.JacksonJsonSupport
 
 import org.json4s.DefaultFormats
 
-trait JsonSvlt extends ScalatraServlet with JacksonJsonSupport {
+trait JsonSvlt extends ScalatraServlet with JacksonJsonSupport with FutureSupport {
     protected implicit val jsonFormats = DefaultFormats
+    implicit def executor = concurrent.ExecutionContext.Implicits.global
 
     private def session_data = new SessionData
     private def sess_state_mgr = new SessionStateManager(
