@@ -1,4 +1,4 @@
-package ireader.utils
+package ireader.drive.web
 
 import annotation.tailrec
 import concurrent._
@@ -9,6 +9,8 @@ import com.google.api.client.googleapis.json.GoogleJsonError
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveRequest
+
+import ireader.drive.FutureProxy
 
 class DriveBatcher(drive: Drive) {
     private var batch = drive.batch
@@ -30,7 +32,7 @@ class DriveBatcher(drive: Drive) {
             }
         }
         req.queue(batch, cb)
-        new FutureProxy(promise.future, this)
+        new FutureProxy(promise.future)(this.addListener)
     }
 
     //def multiple[T, CC[_] <: TraversableLike[DriveRequest[T], _]]
@@ -51,12 +53,12 @@ class DriveBatcher(drive: Drive) {
         }
 
         if (old_batch.size > 0) {
-            info(s"Executing batcher x ${old_batch.size}")
+            info(s"Executing batcher with ${old_batch.size} requests")
             old_batch.execute
 
             if(!wait_for.isEmpty) {
                 val waits = wait_for.map(_.toString).mkString(",")
-                info(s"Waiting for ${wait_for.length} events: ${waits}")
+                info(s"Waiting for ${wait_for.length} events")
                 Await.ready(Future.sequence(wait_for), 10.seconds)
                 execute
             }
@@ -66,24 +68,4 @@ class DriveBatcher(drive: Drive) {
 
 object DriveBatcher {
     def apply(d: Drive) = new DriveBatcher(d)
-}
-
-class FutureProxy[+T] (val future: Future[T], batcher: DriveBatcher) {
-    private def addListener[S](f: Future[S]): Future[S] = {
-        batcher.addListener(f)
-        f
-    }
-
-    private def wrap[S](f: Future[S]): FutureProxy[S] = {
-        info(s"Wrapping ${f}")
-        new FutureProxy(f, batcher)
-    }
-
-    def map[S](f: (T) => S)(implicit executor: ExecutionContext): FutureProxy[S] = {
-        wrap(addListener(future.map(f)))
-    }
-
-    def flatMap[S](f: (T) => Future[S])(implicit executor: ExecutionContext): FutureProxy[S] = {
-        wrap(addListener(future.map(f)).flatMap(x => x))
-    }
 }

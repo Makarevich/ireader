@@ -13,7 +13,7 @@ import com.google.api.client.json.jackson.JacksonFactory
 import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.client.googleapis.json.GoogleJsonError
-import com.google.api.services.drive.model.{About, File, Property}
+import com.google.api.services.drive.model.{File, Property}
 
 import ireader.utils._
 
@@ -22,6 +22,62 @@ class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
     import ExecutionContext.Implicits.global
 
+    post("/folder") {
+        val JString(folder_id: String) = parsedBody \ "folder_id"
+
+        val drive = sess.drive
+
+        val f_folders: Future[JValue] = drive.getFile(folder_id).flatMap {
+        folder =>
+            info(s"Parent count1 ${folder.getParents.size}")
+            Future.sequence {
+                info(s"Parent count2 ${folder.getParents.size}")
+                folder.getParents.map {
+                    p => drive.getFile(p.getId).future
+                }
+            } map { plist =>
+                (folder, plist)
+            }
+        }.future.map { case (folder, parent_list) =>
+            //info(s"Generating parents")
+            ("folder_title" -> folder.getTitle) ~
+            ("parents" -> parent_list.map { f =>
+                ("title" -> f.getTitle) ~
+                ("id" -> f.getId)
+            }):JValue
+        }
+
+        val f_children = drive.listFolderChildren(folder_id).flatMap { ids =>
+            Future.sequence {
+                ids.map {
+                    id => drive.getFile(id).future
+                }
+            }
+        }.future.map { children =>
+            val (folders, files) =
+                children.sortBy(_.getTitle)
+                        .partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
+            //info(s"Generating children")
+            ("files" -> files.map { f =>
+                ("title" -> f.getTitle) ~
+                ("id" -> f.getId)
+            }) ~
+            ("folders" -> folders.map { p =>
+                ("title" -> p.getTitle) ~
+                ("id" -> p.getId)
+            }):JValue
+        }
+
+        drive.execute
+
+        val Seq(folders, children) = Await.result(Future.sequence {
+            Seq(f_folders, f_children)
+        }, 10.seconds)
+
+        folders merge children
+    }
+
+    /*
     get("/queue") {
         val drive = sess.drive.get
         val batcher = DriveBatcher(drive)
@@ -78,7 +134,9 @@ class DriveSvlt extends JsonSvlt {
 
         ("files" -> file_jsons)
     }
+    */
 
+    /*
     post("/doc") {
         val JString(id) = parsedBody \ "id"
 
@@ -168,69 +226,9 @@ class DriveSvlt extends JsonSvlt {
 
         base_json merge props_json
     }
-
-    post("/folder") {
-        val JString(folder_id: String) = parsedBody \ "folder_id"
-
-        val drive = sess.drive.get
-        val batcher = DriveBatcher(drive)
-
-        val f_folders = batcher {
-            drive.files.get(folder_id)
-        }.flatMap { folder =>
-            info(s"Parent count1 ${folder.getParents.size}")
-            Future.sequence {
-                info(s"Parent count2 ${folder.getParents.size}")
-                folder.getParents.map {
-                    p => batcher(drive.files.get(p.getId)).future
-                }
-            } map { plist =>
-                (folder, plist)
-            }
-        }.future.map { case (folder, parent_list) =>
-            //info(s"Generating parents")
-            ("folder_title" -> folder.getTitle) ~
-            ("parents" -> parent_list.map { f =>
-                ("title" -> f.getTitle) ~
-                ("id" -> f.getId)
-            }):JValue
-        }
-
-        val f_children = batcher {
-            drive.children.list(folder_id).setQ("trashed = false")
-        }.flatMap { children_list =>
-            Future.sequence {
-                children_list.getItems.map {
-                    ch => batcher(drive.files.get(ch.getId)).future
-                }
-            }
-        }.future.map { children =>
-            val (folders, files) =
-                children.sortBy(_.getTitle)
-                        .partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
-            //info(s"Generating children")
-            ("files" -> files.map { f =>
-                ("title" -> f.getTitle) ~
-                ("id" -> f.getId)
-            }) ~
-            ("folders" -> folders.map { p =>
-                ("title" -> p.getTitle) ~
-                ("id" -> p.getId)
-            }):JValue
-        }
-
-        batcher.execute
-
-        val Seq(folders, children) = Await.result(Future.sequence {
-            Seq(f_folders, f_children)
-        }, 10.seconds)
-
-        folders merge children
-    }
+    */
 }
 
 object DriveSvlt {
     private val FOLDER_MIME = "application/vnd.google-apps.folder"
-    private val IMPORTANCE_PROP = "ireader_importance"
-    private val TIMESTAMP_PROP = "ireader_timestamp"
 }

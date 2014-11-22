@@ -12,6 +12,18 @@ package object utils {
     def getCurrentTime = System.currentTimeMillis / 1000
 }
 
+package object drive {
+    lazy val logger = LoggerFactory.getLogger("drive")
+    def info(s: String) = logger.info(s)
+}
+
+package drive {
+    package object web {
+        lazy val logger = LoggerFactory.getLogger("drive.web")
+        def info(s: String) = logger.info(s)
+    }
+}
+
 package object server {
     lazy val logger = LoggerFactory.getLogger("server")
     def info(s: String) = logger.info(s)
