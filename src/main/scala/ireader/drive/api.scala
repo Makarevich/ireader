@@ -10,6 +10,11 @@ trait IDriveApi {
     def execute: Unit
 }
 
+trait IDriveApiIO[FileData] {
+    def getFileContent(fileId: String): FutureProxy[FileData]
+    def saveFileContent(fileId: String, data: FileData): Future[Unit]
+}
+
 class FutureProxy[+T] (val future: Future[T])
                       (cb: (Future[_]) => Unit)
 {
