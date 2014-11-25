@@ -1,6 +1,6 @@
 package ireader.drive.web
 
-import ireader.drive.FilePropsDatabase
+import ireader.drive.IInMemPropsDB
 
 import com.google.api.services.drive.Drive
 
@@ -11,6 +11,6 @@ class SessionState(token_box: ITokenContainer,
 
     lazy val drive = new WebDriveApi(google_drive)
 
-    lazy val props = new FilePropsDatabase
+    lazy val props = new IInMemPropsDB {}
 }
 

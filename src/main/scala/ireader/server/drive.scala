@@ -110,6 +110,7 @@ class DriveSvlt extends JsonSvlt {
                     val old = opt.get
                     set_and_to_opt(id, old.copy(ts=getCurrentTime))
                 }
+            case JString("untrack") => ???
             case _ =>
                 stored_doc
             }

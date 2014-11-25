@@ -1,20 +1,31 @@
 package ireader.drive
 
-import concurrent.{Future,ExecutionContext}
+import concurrent.Future
 import collection.mutable.{Map => MutableMap}
 
-class FilePropsDatabase extends IFileProps[BaseDocRecord] {
-    private val data = MutableMap.empty[String, BaseDocRecord]
+trait IPropsDB extends IFileProps[BaseDocRecord]
 
-    def get(key: String): Future[Option[BaseDocRecord]] =
-    synchronized {
-        Future.successful(data.get(key))
+trait IInMemPropsDB extends IPropsDB {
+    private val cache = MutableMap.empty[String, BaseDocRecord]
+
+    def get(key: String): Future[Option[BaseDocRecord]] = synchronized {
+        Future.successful(cache.get(key))
     }
 
-    def set(key: String, value: BaseDocRecord): Future[BaseDocRecord] =
-    synchronized {
-        data.update(key, value)
+    def set(key: String, value: BaseDocRecord): Future[BaseDocRecord] = synchronized {
+        cache.update(key, value)
         Future.successful(value)
     }
+
+    def remove(key: String): Future[Unit] = synchronized {
+        cache.remove(key)
+        Future.successful(Unit)
+    }
+
+    def iterate: Future[Iterator[(String, BaseDocRecord)]] = synchronized {
+        Future.successful(cache.clone.toIterator)
+    }
+
+    //def iterateKeys:
 }
 
