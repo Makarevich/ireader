@@ -3,6 +3,7 @@ package ireader.server
 import javax.servlet.http.HttpSession
 
 import ireader.drive._
+import ireader.drive.web._
 
 class SessionStateManager(token_factory: ITokenContainerFactory,
                           drive_factory: IGoogleDriveFactory,

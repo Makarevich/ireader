@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory
 
 
 package object utils {
-    lazy val logger = LoggerFactory.getLogger("utils")
-    def info(s: String) = logger.info(s)
+    //lazy val logger = LoggerFactory.getLogger("utils")
+    //def info(s: String) = logger.info(s)
 
     def getCurrentTime = System.currentTimeMillis / 1000
 }

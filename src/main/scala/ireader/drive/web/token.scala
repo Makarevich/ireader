@@ -1,4 +1,4 @@
-package ireader.drive
+package ireader.drive.web
 
 trait ITokenContainer {
     def token: String

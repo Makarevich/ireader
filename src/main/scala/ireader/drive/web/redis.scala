@@ -1,6 +1,7 @@
-package ireader.drive
+package ireader.drive.web
 
 import com.redis.RedisClient
+
 
 trait IRedisCache {
     def get: Option[String]

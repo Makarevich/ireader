@@ -2,14 +2,14 @@ package ireader.server
 
 package linker
 
-import ireader.drive
+import ireader.drive.web
 
-object AuthFlow extends drive.AuthFlowProvider
+object AuthFlow extends web.AuthFlowProvider
 
 object TokenContainerFactory
-    extends drive.PersistanceTokenContainerFactory(RedisCache)
+    extends web.PersistanceTokenContainerFactory(RedisCache)
 
-object GoogleDriveFactory extends drive.GoogleAuthDriveFactory(AuthFlow)
+object GoogleDriveFactory extends web.GoogleAuthDriveFactory(AuthFlow)
 
-object RedisCache extends drive.RedisTokenCache
+object RedisCache extends web.RedisTokenCache
 

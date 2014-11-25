@@ -14,7 +14,8 @@ import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.client.googleapis.json.GoogleJsonError
 import com.google.api.services.drive.model.{File, Property}
 
-import ireader.utils._
+import ireader.drive.BaseDocRecord
+import ireader.utils.getCurrentTime
 
 class DriveSvlt extends JsonSvlt {
     import collection.JavaConversions._
@@ -69,6 +70,63 @@ class DriveSvlt extends JsonSvlt {
 
         f_folders zip f_children map { case (folders, children) =>
             folders merge children
+        }
+    }
+
+    post("/doc") {
+        val parsed = parsedBody
+        val JString(id) = parsed \ "id"
+
+        val f_base_json = sess.drive.getFile(id).future.map { file =>
+            ("title" -> file.getTitle) ~
+            ("parent" -> file.getParents.head.getId) ~
+            ("view_link" -> file.getAlternateLink):JValue
+        }
+
+        sess.drive.execute
+
+        val f_doc_record: Future[Option[BaseDocRecord]] = {
+            lazy val stored_doc = sess.props.get(id)
+            lazy val parsed_doc = {
+                val JInt(base) = parsed \ "base"
+                val JInt(half) = parsed \ "half"
+                BaseDocRecord(base.toInt, half.toInt, getCurrentTime)
+            }
+
+            def set_and_to_opt(id: String, rec: BaseDocRecord) = {
+                sess.props.set(id, rec).map(x => Some(x))
+            }
+
+            parsedBody \ "action" match {
+            case JString("init") =>
+                set_and_to_opt(id, parsed_doc)
+            case JString("update") =>
+                stored_doc.flatMap { opt =>
+                    val old = opt.get
+                    set_and_to_opt(id, parsed_doc.copy(ts=old.ts))
+                }
+            case JString("read") =>
+                stored_doc.flatMap { opt =>
+                    val old = opt.get
+                    set_and_to_opt(id, old.copy(ts=getCurrentTime))
+                }
+            case _ =>
+                stored_doc
+            }
+        }
+
+        val f_props_json = f_doc_record.map { record_opt =>
+            val json_opt = record_opt.map { record =>
+                val doc = record.inflate(getCurrentTime)
+                info(s"Inflated: ${doc}")
+                Extraction.decompose(doc)
+            }
+            json_opt.getOrElse(JNothing)
+        }
+
+        f_base_json zip f_props_json map {
+        case (base, props) =>
+            base merge props
         }
     }
 
@@ -128,98 +186,6 @@ class DriveSvlt extends JsonSvlt {
         val file_jsons = Await.result(f_file_jsons, 10.seconds)
 
         ("files" -> file_jsons)
-    }
-    */
-
-    /*
-    post("/doc") {
-        val JString(id) = parsedBody \ "id"
-
-        val drive = sess.drive.get
-        val batcher = DriveBatcher(drive)
-
-
-        lazy val prop_list_future = batcher {
-            drive.properties.list(id)
-        }.future
-
-        val f_prop_opt: Future[Option[Property]] = parsedBody \ "action" match {
-        case JString("init") | JString("update") =>
-            val JInt(base) = parsedBody \ "base"
-            val JInt(halflife) = parsedBody \ "half"
-            val prop_string = Seq(base, halflife).mkString(" ")
-
-            val prop = new Property
-            prop.setKey(DriveSvlt.IMPORTANCE_PROP)
-            prop.setValue(prop_string)
-
-            batcher {
-                drive.properties.update(id, prop.getKey, prop)
-            }.map(x => Some(x)).future
-        case JString("untrack") =>
-            batcher {
-                drive.properties.delete(id, DriveSvlt.IMPORTANCE_PROP)
-            }
-            Future.successful(None)
-        case _ =>
-            prop_list_future map { props =>
-                props.getItems.find(_.getKey == DriveSvlt.IMPORTANCE_PROP)
-            }
-        }
-
-        val f_ts_opt: Future[Option[Property]] = parsedBody \ "action" match {
-        case JString("init") | JString("read") =>
-            val prop = new Property
-            prop.setKey(DriveSvlt.TIMESTAMP_PROP)
-            prop.setValue(getCurrentTime.toString)
-
-            batcher {
-                drive.properties.update(id, prop.getKey, prop)
-            }.map(x => Some(x)).future
-        case JString("untrack") =>
-            batcher {
-                drive.properties.delete(id, DriveSvlt.TIMESTAMP_PROP)
-            }
-            Future.successful(None)
-        case _ =>
-            prop_list_future map { props =>
-                props.getItems.find(_.getKey == DriveSvlt.TIMESTAMP_PROP)
-            }
-        }
-
-        val f_base_json = batcher {
-            drive.files.get(id)
-        } map { file =>
-            ("title" -> file.getTitle) ~
-            ("parent" -> file.getParents.head.getId) ~
-            ("view_link" -> file.getAlternateLink):JValue
-        }
-
-        val f_props_json = Future.sequence(Seq(f_prop_opt, f_ts_opt)).map { opts =>
-            val Seq(prop_opt, ts_opt) = opts
-            val json_opt = for {
-                prop <- prop_opt
-                ts <- ts_opt
-            } yield {
-                info(s"Extracting prop: ${prop.getValue}")
-                val Array(base, half) = prop.getValue.split(" ").map(_.toInt)
-                val doc = DocRecord.inflate(base,
-                                            half,
-                                            ts.getValue.toLong,
-                                            getCurrentTime)
-                info(s"Described: ${doc}")
-                Extraction.decompose(doc)
-            }
-            json_opt.getOrElse(JNothing)
-        }
-
-        batcher.execute
-
-        val Seq(base_json, props_json) = Await.result(Future.sequence{
-            Seq(f_base_json.future, f_props_json)
-        }, 10.seconds)
-
-        base_json merge props_json
     }
     */
 }

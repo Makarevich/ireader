@@ -10,7 +10,7 @@ import com.google.api.services.drive.model.File
 import ireader.drive.IDriveApi
 import ireader.drive.FutureProxy
 
-class WebDriveApi(drive: Drive) extends IDriveApi {
+class WebDriveApi(drive: Drive) extends IDriveApi[File] {
     private val batcher = DriveBatcher(drive)
 
     def getFile(fileId: String): FutureProxy[File] = {
