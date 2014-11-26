@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
 
-import ireader.drive.IDriveApi
+import ireader.drive.{IDriveApi, IDriveIOApi}
 import ireader.drive.FutureProxy
 
 class WebDriveApi(drive: Drive) extends IDriveApi[File] {
@@ -20,15 +20,20 @@ class WebDriveApi(drive: Drive) extends IDriveApi[File] {
     }
 
     def listFolderChildren(folderId: String): FutureProxy[List[String]] = {
-        batcher {
+        val fp = batcher {
             drive.children.list(folderId).setQ("trashed = false")
         } map { child_list =>
+            info(s"Fecthed children!")
             child_list.getItems.map(_.getId).toList
         }
+        fp//.rewrap
     }
 
     def execute: Unit = {
         batcher.execute
     }
+}
+
+abstract class WebDriveIOApi(drive: Drive) extends IDriveIOApi {
 }
 

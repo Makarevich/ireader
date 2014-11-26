@@ -1,7 +1,6 @@
 package ireader.drive
 
 import concurrent.{Future,ExecutionContext}
-import io.Source
 
 // NOTE: FileData here may represent different actual classes in each trait
 
@@ -19,7 +18,7 @@ trait IFileProps[FileData] {
 }
 
 trait IDriveIOApi {
-    def getFileContent(fileId: String): FutureProxy[Source]
+    def getFileContent(fileId: String): Future[String]
     def saveFileContent(fileId: String, content: String): Future[Unit]
 }
 

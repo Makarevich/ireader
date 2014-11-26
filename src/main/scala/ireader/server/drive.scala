@@ -37,7 +37,7 @@ class DriveSvlt extends JsonSvlt {
                 (folder, plist)
             }
         }.future.map { case (folder, parent_list) =>
-            //info(s"Generating parents")
+            info(s"Generating parents")
             ("folder_title" -> folder.getTitle) ~
             ("parents" -> parent_list.map { f =>
                 ("title" -> f.getTitle) ~
@@ -55,7 +55,7 @@ class DriveSvlt extends JsonSvlt {
             val (folders, files) =
                 children.sortBy(_.getTitle)
                         .partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
-            //info(s"Generating children")
+            info(s"Generating children")
             ("files" -> files.map { f =>
                 ("title" -> f.getTitle) ~
                 ("id" -> f.getId)

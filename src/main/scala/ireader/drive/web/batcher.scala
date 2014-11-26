@@ -20,8 +20,9 @@ class DriveBatcher(drive: Drive) {
         listener = f :: listener
     }
 
-    def apply[T](req: DriveRequest[T]): FutureProxy[T] = single(req)
-    def single[T](req: DriveRequest[T]): FutureProxy[T] = synchronized {
+    def apply[T](req: DriveRequest[T])
+                (implicit executor: ExecutionContext): FutureProxy[T] =
+    synchronized {
         val promise = Promise[T]
         val cb = new JsonBatchCallback[T] {
             def onSuccess(f: T, headers: HttpHeaders) {

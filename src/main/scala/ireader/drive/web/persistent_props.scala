@@ -12,7 +12,10 @@ class PersistentPropsDB(drive_io: IDriveIOApi,
 extends IInMemPropsDB
 {
     override def get(key: String): Future[Option[BaseDocRecord]] = {
-        deserizalize.flatMap { u => super.get(key) }
+        for {
+            u <- deserizalize
+            result <- super.get(key)
+        } yield result
     }
 
     override def set(key: String, value: BaseDocRecord): Future[BaseDocRecord] = {
@@ -22,6 +25,8 @@ extends IInMemPropsDB
     override def remove(key: String): Future[Unit] = {
         this.flush(super.remove(key))
     }
+
+    //////
 
     private def flush[T](result: Future[T]): Future[T] = {
         for {
@@ -51,10 +56,10 @@ extends IInMemPropsDB
     private lazy val deserizalize: Future[Unit] = synchronized {
         for {
             id <- fileId
-            src <- drive_io.getFileContent(id).future
+            text <- drive_io.getFileContent(id)
             r <- Future.sequence {
                 val it = for {
-                    line <- src.getLines
+                    line <- text.split('\n')
                     Array(key, base, half, ts) = line.split(" ")
                     doc = BaseDocRecord(base.toInt, half.toInt, ts.toLong)
                 } yield {
@@ -73,7 +78,7 @@ class DBFileLocator(api: WebDriveApi)
 {
     def locate: Future[String] = {
         val f_proxy = for {
-            names <- api.listFolderChildren("root")
+            names <- api.listFolderChildren(DBFileLocator.LOOKUP_FOLDER)
             children <- Future.sequence {
                 names.map { name => api.getFile(name).future }
             }
@@ -81,13 +86,16 @@ class DBFileLocator(api: WebDriveApi)
             val file_opt = children.find { child =>
                 child.getTitle == DBFileLocator.EXPECTED_TITLE
             }
-            file_opt.get.getId
+            file_opt.map(_.getId).get//.getOrElse(get_new_file_id)
         }
         f_proxy.future
     }
+
+    //private def get_new_file_id: Future[String]
 }
 
 object DBFileLocator {
+    private val LOOKUP_FOLDER = "root"
     private val EXPECTED_TITLE = "PROPS"
 }
 
