@@ -11,5 +11,7 @@ object TokenContainerFactory
 
 object GoogleDriveFactory extends web.GoogleAuthDriveFactory(AuthFlow)
 
+object SessionStateFactory extends web.SessionStateFactory(GoogleDriveFactory)
+
 object RedisCache extends web.RedisTokenCache
 

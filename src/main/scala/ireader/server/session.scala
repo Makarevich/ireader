@@ -6,29 +6,29 @@ import ireader.drive._
 import ireader.drive.web._
 
 class SessionStateManager(token_factory: ITokenContainerFactory,
-                          drive_factory: IGoogleDriveFactory,
+                          session_state_factory: ISessionStateFactory,
                           session_data: SessionData)
 {
-    def get: SessionState = {
+    def get: ISessionState = {
         session_data.drive.getOption.getOrElse {
             update_session(token_factory.make)
         }
     }
 
-    def set(new_token: String): SessionState = {
+    def set(new_token: String): ISessionState = {
         update_session(token_factory.make(new_token))
     }
 
-    private def update_session(token_box: ITokenContainer): SessionState = {
-        val new_state = new SessionState(token_box, drive_factory)
+    private def update_session(token_box: ITokenContainer): ISessionState = {
+        val new_state = session_state_factory.build(token_box)
         session_data.drive.set(new_state)
         new_state
     }
 }
 
 
-class SessionData (implicit servlet_session: HttpSession) { sess =>
-    val drive = new SessionData.Item[SessionState]("drive")
+class SessionData (implicit servlet_session: HttpSession) {
+    val drive = new SessionData.Item[ISessionState]("drive")
 }
 
 object SessionData {

@@ -13,7 +13,7 @@ trait JsonSvlt extends ScalatraServlet with JacksonJsonSupport with FutureSuppor
     private def session_data = new SessionData
     private def sess_state_mgr = new SessionStateManager(
         linker.TokenContainerFactory,
-        linker.GoogleDriveFactory,
+        linker.SessionStateFactory,
         session_data)
     protected def sess = sess_state_mgr.get
     protected def update_session(token: String) = sess_state_mgr.set(token)
