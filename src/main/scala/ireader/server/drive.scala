@@ -34,24 +34,35 @@ class DriveSvlt extends JsonSvlt {
                     p => drive.getFile(p.getId).future
                 }
             } map { plist =>
+                info(s"Wrapping into (folder, plist)")
                 (folder, plist)
             }
-        }.future.map { case (folder, parent_list) =>
+        }.map { case (folder, parent_list) =>
             info(s"Generating parents")
             ("folder_title" -> folder.getTitle) ~
             ("parents" -> parent_list.map { f =>
                 ("title" -> f.getTitle) ~
                 ("id" -> f.getId)
             }):JValue
+        }.future
+        /*
+        val f_folders: Future[JValue] = Future.successful {
+            ("folder_title" -> "Test") ~
+            ("parents" -> List(
+                ("title" -> "1") ~
+                ("id" -> "2"))
+            ):JValue
         }
+        */
 
         val f_children = drive.listFolderChildren(folder_id).flatMap { ids =>
+            info(s"Sequencing children")
             Future.sequence {
                 ids.map {
                     id => drive.getFile(id).future
                 }
             }
-        }.future.map { children =>
+        }.map { children =>
             val (folders, files) =
                 children.sortBy(_.getTitle)
                         .partition(_.getMimeType == DriveSvlt.FOLDER_MIME)
@@ -64,7 +75,7 @@ class DriveSvlt extends JsonSvlt {
                 ("title" -> p.getTitle) ~
                 ("id" -> p.getId)
             }):JValue
-        }
+        }.future
 
         drive.execute
 
