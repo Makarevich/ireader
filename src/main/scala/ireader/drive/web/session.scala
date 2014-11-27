@@ -25,7 +25,13 @@ extends ISessionState
 
     lazy val drive = new WebDriveApi(google_drive)
 
-    lazy val props = new IInMemPropsDB {}
+    lazy val drive_io = new WebDriveIOApi(google_drive)
+
+    lazy val props = {
+        import scala.concurrent.ExecutionContext.Implicits.global
+        val drive2 = new WebDriveApi(google_drive)
+        new PersistentPropsDB(drive_io, new DBFileLocator(drive2))
+    }
 }
 
 class SessionStateFactory(drive_factory: IGoogleDriveFactory)

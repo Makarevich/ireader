@@ -77,25 +77,40 @@ class DBFileLocator(api: WebDriveApi)
                    (implicit ectxt: ExecutionContext)
 {
     def locate: Future[String] = {
-        val f_proxy = for {
-            names <- api.listFolderChildren(DBFileLocator.LOOKUP_FOLDER)
-            children <- Future.sequence {
-                names.map { name => api.getFile(name).future }
+        info("Locating db storage")
+        val f_proxy = {
+            api.listFolderChildren(DBFileLocator.LOOKUP_FOLDER).flatMap { names =>
+                Future.sequence {
+                    names.map { name => api.getFile(name).future }
+                }
+            } flatMap { children =>
+                val f_id_opt: Option[Future[String]] = for {
+                    child <- children.find { child =>
+                        child.getTitle == DBFileLocator.EXPECTED_TITLE
+                    }
+                } yield Future.successful(child.getId)
+                f_id_opt.getOrElse(get_new_file_id)
             }
-        } yield {
-            val file_opt = children.find { child =>
-                child.getTitle == DBFileLocator.EXPECTED_TITLE
-            }
-            file_opt.map(_.getId).get//.getOrElse(get_new_file_id)
         }
+        info("Staring locator's api")
+        api.execute
+        info("Finished locator's api")
         f_proxy.future
     }
 
-    //private def get_new_file_id: Future[String]
+    private def get_new_file_id: Future[String] = {
+        info("Inserting empty storage file")
+        val file = api.insertNewFile(DBFileLocator.EXPECTED_TITLE,
+                                     DBFileLocator.STORAGE_MIME_TYPE,
+                                     DBFileLocator.LOOKUP_FOLDER)
+        val result = file.map(_.getId).future
+        result
+    }
 }
 
 object DBFileLocator {
     private val LOOKUP_FOLDER = "root"
     private val EXPECTED_TITLE = "PROPS"
+    private val STORAGE_MIME_TYPE = "text/plain"
 }
 
