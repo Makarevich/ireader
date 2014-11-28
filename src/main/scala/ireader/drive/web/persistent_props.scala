@@ -60,6 +60,7 @@ extends IInMemPropsDB
             r <- Future.sequence {
                 val it = for {
                     line <- text.split('\n')
+                    if !line.isEmpty
                     Array(key, base, half, ts) = line.split(" ")
                     doc = BaseDocRecord(base.toInt, half.toInt, ts.toLong)
                 } yield {

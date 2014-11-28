@@ -35,11 +35,7 @@ class WebDriveApi(drive: Drive) extends IDriveApi[File] {
                       parentId: String): FutureProxy[File] = {
         val file = (new File).setTitle(title).setMimeType(mime).setParents {
             val ref = new ParentReference
-            if (parentId == "root") {
-                ref.setIsRoot(true)
-            } else {
-                ref.setId(parentId)
-            }
+            ref.setId(parentId)
             List(ref)
         }
 

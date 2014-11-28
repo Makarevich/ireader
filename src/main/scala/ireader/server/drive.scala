@@ -45,15 +45,6 @@ class DriveSvlt extends JsonSvlt {
                 ("id" -> f.getId)
             }):JValue
         }.future
-        /*
-        val f_folders: Future[JValue] = Future.successful {
-            ("folder_title" -> "Test") ~
-            ("parents" -> List(
-                ("title" -> "1") ~
-                ("id" -> "2"))
-            ):JValue
-        }
-        */
 
         val f_children = drive.listFolderChildren(folder_id).flatMap { ids =>
             info(s"Sequencing children")
@@ -121,7 +112,8 @@ class DriveSvlt extends JsonSvlt {
                     val old = opt.get
                     set_and_to_opt(id, old.copy(ts=getCurrentTime))
                 }
-            case JString("untrack") => ???
+            case JString("untrack") =>
+                sess.props.remove(id).map(u => None)
             case _ =>
                 stored_doc
             }
