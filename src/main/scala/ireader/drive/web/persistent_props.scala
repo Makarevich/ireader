@@ -12,10 +12,7 @@ class PersistentPropsDB(drive_io: IDriveIOApi,
 extends IInMemPropsDB
 {
     override def get(key: String): Future[Option[BaseDocRecord]] = {
-        for {
-            u <- deserizalize
-            result <- super.get(key)
-        } yield result
+        deserizalize.flatMap(u => super.get(key))
     }
 
     override def set(key: String, value: BaseDocRecord): Future[BaseDocRecord] = {
@@ -26,14 +23,18 @@ extends IInMemPropsDB
         this.flush(super.remove(key))
     }
 
+    override def iterate = {
+        deserizalize.flatMap(u => super.iterate)
+    }
+
     //////
 
     private def flush[T](result: Future[T]): Future[T] = {
         for {
             id <- fileId
+            r <- result
             content <- serialize
             u <- drive_io.saveFileContent(id, content)
-            r <- result
         } yield r
     }
 

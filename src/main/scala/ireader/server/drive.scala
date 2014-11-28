@@ -14,7 +14,7 @@ import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.client.googleapis.json.GoogleJsonError
 import com.google.api.services.drive.model.{File, Property}
 
-import ireader.drive.BaseDocRecord
+import ireader.drive.{BaseDocRecord, DocRecord}
 import ireader.utils.getCurrentTime
 
 class DriveSvlt extends JsonSvlt {
@@ -134,64 +134,34 @@ class DriveSvlt extends JsonSvlt {
         }
     }
 
-    /*
     get("/queue") {
-        val drive = sess.drive.get
-        val batcher = DriveBatcher(drive)
+        val now = getCurrentTime
+        val sess = this.sess
 
-        val f_file_jsons = batcher {
-            val req = drive.files.list
-            .setQ("trashed = false and " +
-                  s"properties has { key='${DriveSvlt.IMPORTANCE_PROP}' } " +
-                  s"and properties has { key='${DriveSvlt.TIMESTAMP_PROP}' }")
-            info(s"Q = ${req.getQ}")
-            req
-        }.flatMap { file_list =>
-            Future.sequence {
-                file_list.getItems.map { file =>
-                    val base =
-                    ("title" -> file.getTitle) ~
-                    ("parent" -> file.getParents.head.getId) ~
-                    ("view_link" -> file.getAlternateLink):JValue
-
-                    val f_imp = batcher {
-                        drive.properties.get(file.getId, DriveSvlt.IMPORTANCE_PROP)
-                    }.future.map(_.getValue)
-                    val f_time = batcher {
-                        drive.properties.get(file.getId, DriveSvlt.TIMESTAMP_PROP)
-                    }.future.map(_.getValue)
-
-                    val f_file_record = for {
-                        imp <- f_imp
-                        ts <- f_time
-                    } yield {
-                        val Array(base, half) = imp.split(" ").map(_.toInt)
-                        DocRecord.inflate(base,
-                                          half,
-                                          ts.toLong,
-                                          getCurrentTime)
-                    }
-                    f_file_record.map(rec => (file, rec))
-                }
+        val f_seq = sess.props.iterate.flatMap { iter =>
+            val result = Future.sequence {
+                for {
+                    (id, base_doc) <- iter
+                    doc = DocRecord.inflate(base_doc, now)
+                } yield for {
+                    file <- sess.drive.getFile(id).future
+                } yield (file, doc)
             }
-        }.future.map { file_info_list =>
-            file_info_list
-            .sortBy { case (file, rec) => rec.current }
-            .map { case (file, record) =>
-                val base = ("title" -> file.getTitle) ~
-                           ("parent" -> file.getParents.head.getId) ~
-                           ("view_link" -> file.getAlternateLink):JValue
-                base merge Extraction.decompose(record)
-            }
+            sess.drive.execute
+            result
         }
 
-        batcher.execute
-
-        val file_jsons = Await.result(f_file_jsons, 10.seconds)
-
-        ("files" -> file_jsons)
+        for {
+            seq <- f_seq
+            sorted = seq.toList.sortBy { case (file, doc) => doc.current }
+        } yield for {
+            (file, doc) <- sorted
+        } yield {
+            val base = ("id" -> file.getId) ~
+            ("title" -> file.getTitle)
+            base merge Extraction.decompose(doc)
+        }
     }
-    */
 }
 
 object DriveSvlt {
