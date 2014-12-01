@@ -9,9 +9,14 @@ class StaticSvlt extends ScalatraServlet with ScalateSupport {
         jade("folder")
     }
 
-    get("doc") {
+    get("/doc") {
         contentType = "text/html"
         jade("doc")
+    }
+
+    get("/queue") {
+        contentType = "text/html"
+        jade("queue")
     }
 
     notFound {

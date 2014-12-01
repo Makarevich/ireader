@@ -134,7 +134,7 @@ class DriveSvlt extends JsonSvlt {
         }
     }
 
-    get("/queue") {
+    post("/queue") {
         val now = getCurrentTime
         val sess = this.sess
 
@@ -151,7 +151,7 @@ class DriveSvlt extends JsonSvlt {
             result
         }
 
-        for {
+        val f_files_json = for {
             seq <- f_seq
             sorted = seq.toList.sortBy { case (file, doc) => doc.current }
         } yield for {
@@ -160,6 +160,12 @@ class DriveSvlt extends JsonSvlt {
             val base = ("id" -> file.getId) ~
             ("title" -> file.getTitle)
             base merge Extraction.decompose(doc)
+        }
+
+        for {
+            files_json <- f_files_json
+        } yield {
+            ("files" -> files_json)
         }
     }
 }

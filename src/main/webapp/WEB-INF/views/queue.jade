@@ -7,32 +7,26 @@ html(lang="en")
     script(type='text/javascript' src='webjars/angularjs/1.3.2/angular.js')
     script(type='text/javascript' src='js/query-lib.js')
     script(type='text/javascript' src='js/start-time.js')
-    script(type='text/javascript' src='js/folder.js')
+    script(type='text/javascript' src='js/queue.js')
     :javascript
       function init_all() {
         setup_page_reloader()
       }
       $(init_all)
-  body(ng-app='folderModule')(ng-controller='folderCtrl')
-    .row
-      ul.breadcrumbs
-        li(ng-repeat='p in data.parents')
-          a(href='?id={{p.id}}') {{p.title}}
+  body(ng-app='queueModule')(ng-controller='queueCtrl')
     .row
       .column.small-6
-        h4#folder_title {{data.folder_title}}
+        h2 The queue
       .column.small-6
         a.button.small.round.right(
                 href='/auth?force=true') Reauth
         a.button.small.round.right(
-                href='/queue') Queue
-    .row
+                href='/') Browse
+    .row(ng-repeat='f in data.files')
       .column.small-3
-        ul.side-nav
-          li(ng-repeat='fld in data.folders')
-            a(href='?id={{fld.id}}') {{fld.title}}
+        button.button.expand.secondary.disabled
+          | {{f.current}}
       .column.small-9
-        a.button.expand.success(
-                href='{{"doc?id=" + f.id}}'
-                ng-repeat='f in data.files') {{f.title}}
-        /a.alert-box.success(href='{{"doc?id=" + f.id}}')(ng-repeat='f in data.files') {{f.title}}
+        a.button.expand.success(href='{{"doc?id=" + f.id}}'){
+            :title => "Last: {{f.ts}}\nBase: {{f.base}}\nHalf: {{f.half}}\nDeadline: {{f.deadline}}"}
+          | {{f.title}}
