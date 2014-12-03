@@ -28,7 +28,7 @@ DocInfoFetcherSvc = ($http, $q, $log) ->
     svc
 
 DocInfoCtrl = ($scope, $sce, $window, fetcher) ->
-    $scope.back_link = '/'
+    $scope.back_link = '/folder'
 
     $scope.read_the_doc = ->
         fetcher.send_data
@@ -46,7 +46,7 @@ DocInfoCtrl = ($scope, $sce, $window, fetcher) ->
         $scope.doc = data
         $scope.tracked = data.base and data.half and data.ts
         $scope.frame_link = $sce.trustAsResourceUrl(data.view_link)
-        $scope.back_link = "/?id=#{data.parent}"
+        $scope.back_link = "/folder?id=#{data.parent}"
         $scope.close_all_forms()
 
 FormCtrl = ($scope, fetcher) ->

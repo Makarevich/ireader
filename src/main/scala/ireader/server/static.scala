@@ -4,7 +4,7 @@ import org.scalatra._
 import scalate.ScalateSupport
 
 class StaticSvlt extends ScalatraServlet with ScalateSupport {
-    get("/") {
+    get("/folder") {
         contentType = "text/html"
         jade("folder")
     }
@@ -14,7 +14,7 @@ class StaticSvlt extends ScalatraServlet with ScalateSupport {
         jade("doc")
     }
 
-    get("/queue") {
+    get("/") {
         contentType = "text/html"
         jade("queue")
     }

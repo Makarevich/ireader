@@ -15,17 +15,17 @@ html(lang="en")
       $(init_all)
   body(ng-app='folderModule')(ng-controller='folderCtrl')
     .row
-      ul.breadcrumbs
-        li(ng-repeat='p in data.parents')
-          a(href='?id={{p.id}}') {{p.title}}
-    .row
       .column.small-6
-        h4#folder_title {{data.folder_title}}
+        h3
+          span(ng-repeat='p in data.parents')
+            a(href='?id={{p.id}}') {{p.title}}
+            | /
+          span {{data.folder_title}}
       .column.small-6
         a.button.small.round.right(
                 href='/auth?force=true') Reauth
         a.button.small.round.right(
-                href='/queue') Queue
+                href='/') Queue
     .row
       .column.small-3
         ul.side-nav
