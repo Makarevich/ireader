@@ -37,7 +37,7 @@ class AuthFlowProvider extends IAuthFlowProvider {
     private val CLIENT_ID = "1033390415538-tfko6f392unt8drju50i763vfc5sr6v5.apps.googleusercontent.com"
     private val CLIENT_SECRET = "VuGj-ju_qaYYQECyqgvaBBXj"
 
-    def flow =
+    lazy val flow =
         new GoogleAuthorizationCodeFlow.Builder(
             new NetHttpTransport,
             new JacksonFactory,

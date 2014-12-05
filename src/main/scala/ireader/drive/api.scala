@@ -5,9 +5,9 @@ import concurrent.{Future,ExecutionContext}
 // NOTE: FileData here may represent different actual classes in each trait
 
 trait IDriveApi[FileData] {
-    def getFile(fileId: String): FutureProxy[FileData]      // TODO: switch to custom data structure??
-    def listFolderChildren(folderId: String): FutureProxy[List[String]]
-    def execute: Unit
+    def getFile(fileId: String): Future[FileData]      // TODO: switch to custom data structure??
+    def listFolderChildren(folderId: String): Future[List[String]]
+    // def execute: Unit
 }
 
 trait IFileProps[FileData] {

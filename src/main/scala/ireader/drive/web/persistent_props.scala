@@ -83,7 +83,7 @@ class DBFileLocator(api: WebDriveApi)
         val f_proxy = {
             api.listFolderChildren(DBFileLocator.LOOKUP_FOLDER).flatMap { names =>
                 Future.sequence {
-                    names.map { name => api.getFile(name).future }
+                    names.map { name => api.getFile(name) }
                 }
             } flatMap { children =>
                 val f_id_opt: Option[Future[String]] = for {
@@ -94,10 +94,10 @@ class DBFileLocator(api: WebDriveApi)
                 f_id_opt.getOrElse(get_new_file_id)
             }
         }
-        info("Staring locator's api")
-        api.execute
-        info("Finished locator's api")
-        f_proxy.future
+        //info("Staring locator's api")
+        //api.execute
+        //info("Finished locator's api")
+        f_proxy
     }
 
     private def get_new_file_id: Future[String] = {
@@ -105,7 +105,7 @@ class DBFileLocator(api: WebDriveApi)
         val file = api.insertNewFile(DBFileLocator.EXPECTED_TITLE,
                                      DBFileLocator.STORAGE_MIME_TYPE,
                                      DBFileLocator.LOOKUP_FOLDER)
-        val result = file.map(_.getId).future
+        val result = file.map(_.getId)
         result
     }
 }

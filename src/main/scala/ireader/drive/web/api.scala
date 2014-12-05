@@ -1,55 +1,75 @@
 package ireader.drive.web
 
 import collection.JavaConversions._
+import util.Success
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
+import akka.actor.{ActorSystem, Props, ActorRef, ActorNotFound}
+import akka.util.Timeout
 
-import com.google.api.services.drive.Drive
-import com.google.api.services.drive.model.File
+import com.google.api.services.drive.{Drive, DriveRequest}
+import com.google.api.services.drive.model.{File, ChildList}
 import com.google.api.services.drive.model.ParentReference
 
 import ireader.drive.{IDriveApi, IDriveIOApi}
-import ireader.drive.FutureProxy
 
-class WebDriveApi(drive: Drive) extends IDriveApi[File] {
-    private val batcher = DriveBatcher(drive)
+class WebDriveApi(drive: Drive, actor_system: ActorSystem)
+extends IDriveApi[File]
+{
+    import actor_system.dispatcher
+    private implicit val timeout: Timeout = 10.seconds
 
-    def getFile(fileId: String): FutureProxy[File] = {
-        batcher {
-            drive.files.get(fileId)
+    private val batcher: Future[ActorRef] = {
+        val sel = actor_system.actorSelection("/user/batcher")
+        sel.resolveOne().recover {
+        case e: ActorNotFound =>
+            info(e.getMessage)
+            actor_system.actorOf(Props[BatchingActor], "batcher")
         }
+    } andThen {
+    case Success(actor) => actor ! drive
     }
 
-    def listFolderChildren(folderId: String): FutureProxy[List[String]] = {
-        val fp = batcher {
-            drive.children.list(folderId).setQ("trashed = false")
-        } map { child_list =>
+    private def ask[ResType](msg: DriveRequest[_]): Future[Any] =
+    {
+        for {
+            b <- batcher
+            ff <- akka.pattern.ask(b, msg).mapTo[Future[Any]]
+            f <- ff
+        } yield f
+    }
+    def getFile(fileId: String): Future[File] = {
+        ask(drive.files.get(fileId)).mapTo[File]
+    }
+
+    def listFolderChildren(folderId: String): Future[List[String]] = {
+        for {
+            child_list <- ask{
+                drive.children.list(folderId).setQ("trashed = false")
+            }.mapTo[ChildList]
+        } yield {
             info(s"Fecthed children!")
             child_list.getItems.map(_.getId).toList
         }
-        fp//.rewrap
     }
 
     def insertNewFile(title: String,
                       mime: String,
-                      parentId: String): FutureProxy[File] = {
+                      parentId: String): Future[File] = {
         val file = (new File).setTitle(title).setMimeType(mime).setParents {
             val ref = new ParentReference
             ref.setId(parentId)
             List(ref)
         }
 
-        batcher {
-            drive.files.insert(file)
-        }
-    }
-
-    def execute: Unit = {
-        batcher.execute
+        ask(drive.files.insert(file)).mapTo[File]
     }
 }
 
-class WebDriveIOApi(drive: Drive) extends IDriveIOApi {
+class WebDriveIOApi(drive: Drive)(implicit ec: ExecutionContext)
+        extends IDriveIOApi
+{
     def getFileContent(fileId: String): Future[String] = Future {
         info("getFileContent")
         import io.Source

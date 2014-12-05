@@ -16,4 +16,9 @@ class ScalatraBootstrap extends LifeCycle {
         context mount (new AuthSvlt, "/auth")
         context mount (new DriveSvlt, "/drive")
     }
+
+
+    override def destroy(context:ServletContext) {
+        ireader.ActorSystemContainer.system.shutdown()
+    }
 }

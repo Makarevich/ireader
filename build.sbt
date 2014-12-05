@@ -15,6 +15,8 @@ libraryDependencies ++= Seq(
     "com.google.http-client" % "google-http-client-jackson" % "1.19.0",
     "net.debasishg" %% "redisclient" % "2.13",
     // "org.webjars" % "jquery" % "2.1.1",
+    "com.typesafe.akka" %% "akka-actor" % "2.3.6",
+    "com.typesafe.akka" %% "akka-slf4j" % "2.3.6",
     "org.webjars" % "foundation" % "5.4.5",
     "org.webjars" % "foundation-icon-fonts" % "d596a3cfb3",
     "org.webjars" % "angularjs" % "1.3.2",

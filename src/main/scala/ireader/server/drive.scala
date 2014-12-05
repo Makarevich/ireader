@@ -31,7 +31,7 @@ class DriveSvlt extends JsonSvlt {
             Future.sequence {
                 info(s"Parent count2 ${folder.getParents.size}")
                 folder.getParents.map {
-                    p => drive.getFile(p.getId).future
+                    p => drive.getFile(p.getId)
                 }
             } map { plist =>
                 info(s"Wrapping into (folder, plist)")
@@ -44,13 +44,13 @@ class DriveSvlt extends JsonSvlt {
                 ("title" -> f.getTitle) ~
                 ("id" -> f.getId)
             }):JValue
-        }.future
+        }
 
         val f_children = drive.listFolderChildren(folder_id).flatMap { ids =>
             info(s"Sequencing children")
             Future.sequence {
                 ids.map {
-                    id => drive.getFile(id).future
+                    id => drive.getFile(id)
                 }
             }
         }.map { children =>
@@ -66,9 +66,7 @@ class DriveSvlt extends JsonSvlt {
                 ("title" -> p.getTitle) ~
                 ("id" -> p.getId)
             }):JValue
-        }.future
-
-        drive.execute
+        }
 
         f_folders zip f_children map { case (folders, children) =>
             folders merge children
@@ -79,13 +77,11 @@ class DriveSvlt extends JsonSvlt {
         val parsed = parsedBody
         val JString(id) = parsed \ "id"
 
-        val f_base_json = sess.drive.getFile(id).future.map { file =>
+        val f_base_json = sess.drive.getFile(id).map { file =>
             ("title" -> file.getTitle) ~
             ("parent" -> file.getParents.head.getId) ~
             ("view_link" -> file.getAlternateLink):JValue
         }
-
-        sess.drive.execute
 
         val f_doc_record: Future[Option[BaseDocRecord]] = {
             lazy val stored_doc = sess.props.get(id)
@@ -139,16 +135,14 @@ class DriveSvlt extends JsonSvlt {
         val sess = this.sess
 
         val f_seq = sess.props.iterate.flatMap { iter =>
-            val result = Future.sequence {
+            Future.sequence {
                 for {
                     (id, base_doc) <- iter
                     doc = DocRecord.inflate(base_doc, now)
                 } yield for {
-                    file <- sess.drive.getFile(id).future
+                    file <- sess.drive.getFile(id)
                 } yield (file, doc)
             }
-            sess.drive.execute
-            result
         }
 
         val f_files_json = for {

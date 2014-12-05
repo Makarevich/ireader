@@ -6,6 +6,7 @@ import ireader.drive.IPropsDB
 
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.model.File
+import akka.actor.ActorSystem
 
 trait ISessionState {
     def drive: IDriveApi[File]
@@ -17,27 +18,29 @@ trait ISessionStateFactory {
 }
 
 class SessionState(token_box: ITokenContainer,
-                   drive_factory: IGoogleDriveFactory)
+                   drive_factory: IGoogleDriveFactory,
+                   actor_system: ActorSystem)
 extends ISessionState
 {
+    import actor_system.dispatcher
+
     private lazy val google_drive: Drive =
         drive_factory.build(token_box.token)
 
-    lazy val drive = new WebDriveApi(google_drive)
+    lazy val drive = new WebDriveApi(google_drive, actor_system)
 
     lazy val drive_io = new WebDriveIOApi(google_drive)
 
     lazy val props = {
-        import scala.concurrent.ExecutionContext.Implicits.global
-        val drive2 = new WebDriveApi(google_drive)
-        new PersistentPropsDB(drive_io, new DBFileLocator(drive2))
+        new PersistentPropsDB(drive_io, new DBFileLocator(drive))
     }
 }
 
-class SessionStateFactory(drive_factory: IGoogleDriveFactory)
+class SessionStateFactory(drive_factory: IGoogleDriveFactory,
+                          actor_system: ActorSystem)
 extends ISessionStateFactory
 {
     def build(token_box: ITokenContainer): ISessionState =
-        new SessionState(token_box, drive_factory)
+        new SessionState(token_box, drive_factory, actor_system)
 }
 
