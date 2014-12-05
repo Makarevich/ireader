@@ -27,21 +27,21 @@ DocInfoFetcherSvc = ($http, $q, $log) ->
     svc.send_data()
     svc
 
-DocInfoCtrl = ($scope, $sce, $window, fetcher) ->
+DocInfoCtrl = ($scope, $sce, $window, docInfoFetcher) ->
     $scope.back_link = '/folder'
 
     $scope.read_the_doc = ->
-        fetcher.send_data
+        docInfoFetcher.send_data
             action: 'read'
 
     $scope.untrack = ->
-        fetcher.send_data
+        docInfoFetcher.send_data
             action: 'untrack'
 
     $scope.close_all_forms = ->
         $window.close_form_modal()
 
-    fetcher.on_new_data (data) ->
+    docInfoFetcher.on_new_data (data) ->
         $scope.loaded = true
         $scope.doc = data
         $scope.tracked = data.base and data.half and data.ts
@@ -49,17 +49,17 @@ DocInfoCtrl = ($scope, $sce, $window, fetcher) ->
         $scope.back_link = "/folder?id=#{data.parent}"
         $scope.close_all_forms()
 
-FormCtrl = ($scope, fetcher) ->
+FormCtrl = ($scope, docInfoFetcher) ->
     $scope.base = '50'
     $scope.half = '10'
     $scope.submit_form = ->
         $scope.form_disabled = true
-        fetcher.send_data
+        docInfoFetcher.send_data
             action: if $scope.tracked then 'update' else 'init'
             base: Number($scope.base)
             half: Number($scope.half)
 
-    fetcher.on_new_data (data) ->
+    docInfoFetcher.on_new_data (data) ->
         $scope.form_disabled = false
         if data.base
             $scope.base = data.base
@@ -68,9 +68,6 @@ FormCtrl = ($scope, fetcher) ->
 
 angular
 .module('docViewModule', [])
-.service('docInfoFetcher',
-         ['$http', '$q', '$log', DocInfoFetcherSvc])
-.controller('docInfoCtrl',
-            ['$scope', '$sce', '$window', 'docInfoFetcher', DocInfoCtrl])
-.controller('formCtrl',
-            ['$scope', 'docInfoFetcher', FormCtrl])
+.service('docInfoFetcher', DocInfoFetcherSvc)
+.controller('docInfoCtrl', DocInfoCtrl)
+.controller('formCtrl', FormCtrl)

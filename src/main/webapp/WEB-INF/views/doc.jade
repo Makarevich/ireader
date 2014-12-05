@@ -3,8 +3,6 @@ html(lang="en")
   head
     link(rel='stylesheet' href='webjars/foundation/5.4.5/css/foundation.min.css')
     link(rel='stylesheet' href='webjars/foundation-icon-fonts/d596a3cfb3/foundation-icons.css')
-    link(rel='stylesheet' href='common.css')
-    link(rel='stylesheet' href='doc.css')
     script(type='text/javascript' src='webjars/jquery/2.1.0/jquery.min.js')
     script(type='text/javascript' src='webjars/foundation/5.4.5/js/foundation.min.js')
     /script(type='text/javascript' src='webjars/foundation/5.4.5/js/foundation/foundation.reveal.js')
@@ -14,6 +12,7 @@ html(lang="en")
     script(type='text/javascript' src='js/doc.js')
     :javascript
       function init_all() {
+        console.log('Initializing')
         $(document).foundation()
 
         window.close_form_modal = function () {
@@ -25,92 +24,89 @@ html(lang="en")
       }
       $(init_all)
   body(ng-app='docViewModule')(ng-controller='docInfoCtrl')
-    #header
-      .row
-        .column.small-1
-          .row
-            h3
-              a.fi-arrow-left(title='Back'
-                              ng-href='{{back_link}}')
-          .row
-            h3
-              a.fi-arrows-expand(target='_blank'
-                                 title='Open in new window'
-                                 ng-href='{{frame_link}}')
-        .loading(ng-hide='loaded')
-          h4.text-center Loading...
-        #info(ng-show='loaded')
+    .row
+      .column.small-1
+        .row
+          h3
+            a.fi-arrow-left(title='Back'
+                            ng-href='{{back_link}}')
+        .row
+          h3
+            a.fi-arrows-expand(target='_blank'
+                               title='Open in new window'
+                               ng-href='{{frame_link}}')
+      .loading(ng-hide='loaded')
+        h4.text-center Loading...
+      #info(ng-show='loaded')
+        .column.small-2
+          h4#title {{doc.title}}
+        #non-tracked(ng-show='!tracked')
+          .column.small-1
           .column.small-2
-            h4#title {{doc.title}}
-          #non-tracked(ng-show='!tracked')
-            .column.small-1
-            .column.small-2
-              .row
-                h1
-                  a.alert.expanded.fi-page-add(
-                        href='#' title='Track'
-                        data-reveal-id='update-form')
-          #detailed(ng-show='tracked')
-            .column.small-7.clearfix
-              table.left
-                tr
-                  td Current
-                  td {{doc.current | limitTo:5}}
-                tr
-                  td Base
-                  td {{doc.base}}
-                tr
-                  td Halflife
-                  td {{doc.half}}
-              table.left
-                tr
-                  td Timestamp
-                  td {{doc.ts}}
-                tr
-                  td Deadline
-                  td {{doc.deadline}}
-            .column.small-1
+            .row
+              h1
+                a.alert.expanded.fi-page-add(
+                      href='#' title='Track'
+                      data-reveal-id='update-form')
+        #detailed(ng-show='tracked')
+          .column.small-7.clearfix
+            table.left
+              tr
+                td Current
+                td {{doc.current | limitTo:5}}
+              tr
+                td Base
+                td {{doc.base}}
+              tr
+                td Halflife
+                td {{doc.half}}
+              tr
+                td Timestamp
+                td {{doc.ts}}
+              tr
+                td Deadline
+                td {{doc.deadline}}
+          .column.small-1
+            h3
+              a.fi-check(href='#'
+                         title='Read the doc'
+                         ng-click='read_the_doc()')
+          .column.small-1
+            .row
               h3
-                a.fi-check(href='#'
-                           title='Read the doc'
-                           ng-click='read_the_doc()')
-            .column.small-1
-              .row
-                h3
-                  a.fi-pencil(href='#'
-                              title='Update'
-                              data-reveal-id='update-form')
-              .row
-                h3
-                  a.fi-page-remove(href='#'
-                                   title='Untrack'
-                                   data-reveal-id='untrack-form')
-        #update-form.reveal-modal(ng-controller='formCtrl'
-                                  data-reveal='')
-          .row
-            .column.small-8
-              .row
-                .column.small-3
-                  label.inline(for='base')
-                    | Base
-                  label.inline(for='half')
-                    | Halflife
-                .column.small-9
-                  input#base(type='text' placeholder='base'
-                             ng-model='base')
-                  input#half(type='text' placeholder='halflife'
-                             ng-model='half')
-            .column.small-2
+                a.fi-pencil(href='#'
+                            title='Update'
+                            data-reveal-id='update-form')
+            .row
               h3
-                a.fi-check(ng-class='{disabled: form_disabled}'
-                           ng-click='submit_form()')
-            .column.small-2
-              a.close-reveal-modal.fi-x
-        #untrack-form.reveal-modal(data-reveal='')
-          .row
-            .column.small-10
-              button.expand.alert(ng-click='untrack()')
-                | Really, untrack?
-            .column.small-2
-              a.close-reveal-modal.fi-x
-    iframe(ng-show='frame_link' ng-src='{{frame_link}}')
+                a.fi-page-remove(href='#'
+                                 title='Untrack'
+                                 data-reveal-id='untrack-form')
+      #update-form.reveal-modal(ng-controller='formCtrl'
+                                data-reveal='')
+        .row
+          .column.small-8
+            .row
+              .column.small-3
+                label.inline(for='base')
+                  | Base
+                label.inline(for='half')
+                  | Halflife
+              .column.small-9
+                input#base(type='text' placeholder='base'
+                           ng-model='base')
+                input#half(type='text' placeholder='halflife'
+                           ng-model='half')
+          .column.small-2
+            h3
+              a.fi-check(ng-class='{disabled: form_disabled}'
+                         ng-click='submit_form()')
+          .column.small-2
+            a.close-reveal-modal.fi-x
+      #untrack-form.reveal-modal(data-reveal='')
+        .row
+          .column.small-10
+            button.expand.alert(ng-click='untrack()')
+              | Really, untrack?
+          .column.small-2
+            a.close-reveal-modal.fi-x

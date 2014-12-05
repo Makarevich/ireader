@@ -34,7 +34,6 @@ class DriveSvlt extends JsonSvlt {
                     p => drive.getFile(p.getId)
                 }
             } map { plist =>
-                info(s"Wrapping into (folder, plist)")
                 (folder, plist)
             }
         }.map { case (folder, parent_list) =>
@@ -75,6 +74,7 @@ class DriveSvlt extends JsonSvlt {
 
     post("/doc") {
         val parsed = parsedBody
+        val sess = this.sess
         val JString(id) = parsed \ "id"
 
         val f_base_json = sess.drive.getFile(id).map { file =>
@@ -145,8 +145,21 @@ class DriveSvlt extends JsonSvlt {
             }
         }
 
-        val f_files_json = for {
+        val f_filtered_seq = for {
             seq <- f_seq
+            (trashed, not_trashed) = seq.partition {
+                case (file, doc) => file.getLabels.getTrashed
+            }
+            u <- Future.sequence {
+                info(s"Trashing ${trashed.size} docs")
+                trashed.map { case (file, doc) =>
+                    sess.props.remove(file.getId)
+                }
+            }
+        } yield not_trashed
+
+        val f_files_json = for {
+            seq <- f_filtered_seq
             sorted = seq.toList.sortBy { case (file, doc) => doc.current }
         } yield for {
             (file, doc) <- sorted
