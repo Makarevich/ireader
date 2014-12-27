@@ -8,6 +8,8 @@ scalaVersion := "2.11.2"
 
 scalacOptions += "-deprecation"
 
+javaOptions += "-Xmx512m"
+
 jetty()
 
 libraryDependencies ++= Seq(
