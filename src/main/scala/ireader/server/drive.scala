@@ -151,8 +151,8 @@ class DriveSvlt extends JsonSvlt {
                 case (file, doc) => file.getLabels.getTrashed
             }
             u <- Future.sequence {
-                info(s"Trashing ${trashed.size} docs")
                 trashed.map { case (file, doc) =>
+                    info(s"Trashing ${file.getId}")
                     sess.props.remove(file.getId)
                 }
             }

@@ -51,7 +51,7 @@ DocInfoCtrl = ($scope, $sce, $window, docInfoFetcher) ->
 
 FormCtrl = ($scope, docInfoFetcher) ->
     $scope.base = '50'
-    $scope.half = '10'
+    $scope.half = '100'
     $scope.submit_form = ->
         $scope.form_disabled = true
         docInfoFetcher.send_data
