@@ -6,8 +6,6 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 
-import ireader.drive.web.BatchingActor
-
 object ActorSystemContainer {
     lazy val logger = LoggerFactory.getLogger("ActorSystemContainer")
     lazy val system: ActorSystem = {
