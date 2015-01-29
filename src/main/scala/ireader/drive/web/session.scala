@@ -11,6 +11,8 @@ import akka.actor.ActorSystem
 trait ISessionState {
     def drive: IDriveApi[File]
     def props: IPropsDB
+
+    //def props2: IPropsDB
 }
 
 trait ISessionStateFactory {
@@ -22,18 +24,22 @@ class SessionState(token_box: ITokenContainer,
                    actor_system: ActorSystem)
 extends ISessionState
 {
-    import actor_system.dispatcher
+    import actor_system.dispatcher  // TODO: clean up those implicits
 
     private lazy val google_drive: Drive =
         drive_factory.build(token_box.token)
 
-    lazy val drive = new WebDriveApi(google_drive, actor_system)
+    private lazy val batcher = new DriveBatcher(actor_system, google_drive)
+
+    lazy val drive = new WebDriveApi(batcher)
 
     lazy val drive_io = new WebDriveIOApi(google_drive)
 
     lazy val props = {
         new PersistentPropsDB(drive_io, new DBFileLocator(drive))
     }
+
+    //lazy val props = new WebFileProps(batcher)
 }
 
 class SessionStateFactory(drive_factory: IGoogleDriveFactory,
