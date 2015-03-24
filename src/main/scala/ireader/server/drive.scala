@@ -175,35 +175,6 @@ class DriveSvlt extends JsonSvlt {
             ("files" -> files_json)
         }
     }
-
-    /*
-    get("/update") {
-        import util.Success
-
-        val sess = this.sess
-
-        info("Updating database")
-
-        val f_seq = sess.props.iterate.flatMap { iter =>
-            iter.zipWithIndex.foldLeft(Future.successful(true)) {
-            case (f, item) =>
-                val ((id, base_doc), index) = item
-                f.flatMap { bool =>
-                    sess.props2.set(id, base_doc)
-                } map { rec =>
-                    info(s"Updated doc ${index}")
-                    true
-                }
-            }
-        }
-
-        f_seq.onSuccess { case _ =>
-            info("Updated ALL docs")
-        }
-
-        "STARTED!"
-    }
-    */
 }
 
 object DriveSvlt {

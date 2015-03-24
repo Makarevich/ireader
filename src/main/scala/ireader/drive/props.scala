@@ -25,7 +25,5 @@ trait IInMemPropsDB extends IPropsDB {
     def iterate: Future[Iterator[(String, BaseDocRecord)]] = synchronized {
         Future.successful(cache.clone.toIterator)
     }
-
-    //def iterateKeys:
 }
 

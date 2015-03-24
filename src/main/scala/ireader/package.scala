@@ -2,31 +2,22 @@ package ireader
 
 import java.util.Date
 import java.text.DateFormat
-import org.slf4j.LoggerFactory
 
+import ireader.utils.InfoLogger
 
-package object utils {
-    //lazy val logger = LoggerFactory.getLogger("utils")
-    //def info(s: String) = logger.info(s)
-
-    def getCurrentTime = System.currentTimeMillis / 1000
-}
 
 package object drive {
-    lazy val logger = LoggerFactory.getLogger("drive")
-    def info(s: String) = logger.info(s)
+    val info = new InfoLogger("drive")
 }
 
 package drive {
     package object web {
-        lazy val logger = LoggerFactory.getLogger("drive.web")
-        def info(s: String) = logger.info(s)
+        val info = new InfoLogger("drive.web")
     }
 }
 
 package object server {
-    lazy val logger = LoggerFactory.getLogger("server")
-    def info(s: String) = logger.info(s)
+    val info = new InfoLogger("server")
 
     lazy val started_on: String = {
         val fmt = DateFormat.getDateTimeInstance

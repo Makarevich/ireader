@@ -9,7 +9,7 @@ import com.google.api.services.drive.model.{File, FileList, ChildList}
 import com.google.api.services.drive.model.{Property, PropertyList}
 import com.google.api.services.drive.model.ParentReference
 
-import ireader.drive.{IDriveApi, IPropsDB, IDriveIOApi, BaseDocRecord}
+import ireader.drive.{IDriveApi, IPropsDB, BaseDocRecord}
 
 class WebDriveApi(batcher: DriveBatcher)(implicit ec: ExecutionContext)
 extends IDriveApi[File]
@@ -120,34 +120,3 @@ extends IPropsDB
         }
     }
 }
-
-class WebDriveIOApi(drive: Drive)(implicit ec: ExecutionContext)
-        extends IDriveIOApi
-{
-    def getFileContent(fileId: String): Future[String] = Future {
-        info("getFileContent")
-        import io.Source
-        import com.google.api.client.http.GenericUrl
-
-        val file = drive.files.get(fileId).execute
-
-        val response = drive.getRequestFactory.buildGetRequest(
-                new GenericUrl(file.getDownloadUrl)).execute
-
-        Source.fromInputStream(response.getContent).getLines.mkString("\n")
-    }
-
-    def saveFileContent(fileId: String, content: String): Future[Unit] = Future {
-        info("saveFileContent")
-        import java.io.ByteArrayInputStream
-        import java.nio.charset.StandardCharsets
-        import com.google.api.client.http.InputStreamContent
-
-        val file = drive.files.get(fileId).execute
-
-        val stream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))
-        val stream_content = new InputStreamContent("text/plain", stream)
-        drive.files.update(fileId, file, stream_content).execute
-    }
-}
-
