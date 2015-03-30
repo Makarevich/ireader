@@ -1,13 +1,13 @@
-package ireader.drive.web
+package ireader.drive.web.batcher
 
-import annotation.tailrec
-import util.Success
+//import annotation.tailrec
+//import util.Success
 import concurrent._
 import concurrent.duration._
-import akka.actor.Actor
-import akka.event.{Logging, LoggingReceive}
-import akka.actor.{ActorSystem, Props, ActorRef, ActorNotFound}
-import akka.util.Timeout
+//import akka.actor.Actor
+//import akka.event.Logging
+//import akka.actor.{ActorSystem, Props, ActorRef}
+//import akka.util.Timeout
 
 import com.google.api.client.http.HttpHeaders
 import com.google.api.client.googleapis.json.GoogleJsonError
@@ -15,36 +15,29 @@ import com.google.api.client.googleapis.batch.BatchRequest
 import com.google.api.client.googleapis.batch.json.JsonBatchCallback
 import com.google.api.services.drive.{Drive, DriveRequest}
 
-class DriveBatcher(actor_system: ActorSystem, val drive: Drive)
+class DriveBatcher(actor_system_prov: => ActorSystem)
 {
-    import actor_system.dispatcher
+    //import actor_system.dispatcher
 
-    def execute(msg: DriveRequest[_]): Future[Any] =
-    {
+    private lazy val actor_system = actor_system_prov
+    private lazy val actor = {
+        actor_system.actorOf(Props[BatchingActor], "batcher")
+    }
+    private lazy val executor = new DriveBatcherExecutor(actor)
+
+    def execute(msg: DriveRequest[_]): Future[Any] = {
         for {
-            b <- actor_f
-            ff <- akka.pattern.ask(b, msg).mapTo[Future[Any]]
+            ff <- akka.pattern.ask(actor, msg).mapTo[Future[Any]]
             f <- ff
         } yield f
     }
 
-
-    private implicit val timeout: Timeout = 10.seconds
-
-    private val actor_f: Future[ActorRef] = {
-        val sel = actor_system.actorSelection("/user/batcher")
-        sel.resolveOne().recover {
-        case e: ActorNotFound =>
-            info(e.getMessage)
-            actor_system.actorOf(Props[BatchingActor], "batcher")
-        }
-    } andThen {
-    case Success(actor) => actor ! drive
+    def set_drive(drive: Drive): Future[Unit] = {
+        akka.pattern.ask(actor, drive)
     }
-
 }
 
-class BatchingActor extends Actor {
+private class BatchingActor extends Actor {
     object TICK
 
     val log = Logging(context.system, this)
@@ -80,7 +73,7 @@ class BatchingActor extends Actor {
         tick.cancel()
     }
 
-    def receive = LoggingReceive {
+    def receive = Receive {
         drive_updater andThen {
         case _ => context.become(drive_updater orElse request_receiver)
         }
@@ -91,6 +84,7 @@ class BatchingActor extends Actor {
         log.info("Swapping drive")
         this.drive = new_drive
         this.batch = this.drive.batch
+        sender() ! "ok"
     }
 
     def request_receiver: Receive = {

@@ -26,11 +26,12 @@ extends IDriveApi[File]
                 drive.children.list(folderId).setQ("trashed = false")
             }.mapTo[ChildList]
         } yield {
-            info(s"Fecthed children!")
+            //info(s"Fecthed children!")
             child_list.getItems.map(_.getId).toList
         }
     }
 
+    /*
     def insertNewFile(title: String,
                       mime: String,
                       parentId: String): Future[File] = {
@@ -42,6 +43,7 @@ extends IDriveApi[File]
 
         batcher.execute(drive.files.insert(file)).mapTo[File]
     }
+    */
 }
 
 class WebFileProps(batcher: DriveBatcher)(implicit ec: ExecutionContext)
